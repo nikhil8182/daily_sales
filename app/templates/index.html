@@ -18,13 +18,8 @@
     
     <main>
         <div class="tab-container">
-            <div class="tabs">
-                <button class="tab-btn active" onclick="openTab(event, 'pr-tab')">PR Visits</button>
-                <button class="tab-btn" onclick="openTab(event, 'tc-tab')">TC Activities</button>
-            </div>
-            
-            <!-- PR Tab -->
-            <div id="pr-tab" class="tab-content active">
+            <div class="tables-container">
+                <!-- PR Visits Section -->
                 <div class="table-container">
                     <h2>Today's PR Visits</h2>
                     
@@ -34,7 +29,7 @@
                         </a>
                     </div>
                     
-                    <div class="table-scroll">
+                    <div class="table-scroll pr-table-scroll">
                         <table id="pr-table">
                             <thead>
                                 <tr>
@@ -92,10 +87,8 @@
                         </table>
                     </div>
                 </div>
-            </div>
-            
-            <!-- TC Tab -->
-            <div id="tc-tab" class="tab-content">
+                
+                <!-- TC Activities Section -->
                 <div class="table-container">
                     <h2>Today's Telecaller Activities</h2>
                     
@@ -105,7 +98,7 @@
                         </a>
                     </div>
                     
-                    <div class="table-scroll">
+                    <div class="table-scroll tc-table-scroll">
                         <table id="tc-table">
                             <thead>
                                 <tr>
@@ -159,26 +152,6 @@
     </footer>
     
     <script>
-        function openTab(evt, tabName) {
-            var i, tabContent, tabButtons;
-            
-            // Hide all tab content
-            tabContent = document.getElementsByClassName("tab-content");
-            for (i = 0; i < tabContent.length; i++) {
-                tabContent[i].classList.remove("active");
-            }
-            
-            // Remove "active" class from all tab buttons
-            tabButtons = document.getElementsByClassName("tab-btn");
-            for (i = 0; i < tabButtons.length; i++) {
-                tabButtons[i].classList.remove("active");
-            }
-            
-            // Show the current tab and add "active" class to the button that opened the tab
-            document.getElementById(tabName).classList.add("active");
-            evt.currentTarget.classList.add("active");
-        }
-        
         function checkForUpdates() {
             const updateStatus = document.getElementById('update-status');
             const updateBtn = document.getElementById('update-btn');

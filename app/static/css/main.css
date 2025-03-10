@@ -60,7 +60,7 @@ footer {
 }
 
 /* Tab Layout */
-.tab-container, .team-container {
+.tab-container, .team-container, .dashboard-container {
     background-color: white;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -98,6 +98,16 @@ footer {
 
 .tab-content.active, .team-tab-content.active {
     display: block;
+}
+
+/* Tables Container */
+.tables-container {
+    padding: 1rem;
+}
+
+.pr-table-scroll, .tc-table-scroll {
+    max-height: 30vh;
+    overflow-y: auto;
 }
 
 /* Table Styles */
