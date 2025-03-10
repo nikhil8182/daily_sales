@@ -7,13 +7,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <header>
-        <h1>Daily Sales Tracking</h1>
-        <div class="date-display">Today: {{ today }}</div>
-        <nav>
-            <a href="{{ url_for('main.index') }}" class="active">Dashboard</a>
-            <a href="{{ url_for('main.team') }}">Manage Team</a>
-        </nav>
+    <header class="sleek-header">
+        <div class="header-content">
+            <h1>Sales Tracking</h1>
+            <span class="date-badge">{{ today }}</span>
+            <nav>
+                <a href="{{ url_for('main.index') }}" class="active">Dashboard</a>
+                <a href="{{ url_for('main.team') }}">Team</a>
+                <a href="{{ url_for('main.followups') }}">Follow-ups</a>
+            </nav>
+        </div>
     </header>
     
     <main>
@@ -21,7 +24,43 @@
             <div class="tables-container">
                 <!-- PR Visits Section -->
                 <div class="table-container">
-                    <h2>Today's PR Visits</h2>
+                    <div class="dashboard-header">
+                        <h2>Today's PR Visits</h2>
+                        <div class="dashboard-filters">
+                            <input type="text" id="pr-search" placeholder="Search..." class="search-input">
+                            <select id="pr-status-filter" class="filter-select">
+                                <option value="all">All Statuses</option>
+                                <option value="Waiting to start">Waiting to start</option>
+                                <option value="On the way">On the way</option>
+                                <option value="In visit">In visit</option>
+                                <option value="Closing call">Closing call</option>
+                                <option value="Today payment">Today payment</option>
+                                <option value="Closed">Closed</option>
+                                <option value="Rejected">Rejected</option>
+                                <option value="Followup">Followup</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Statistics Cards -->
+                    <div class="stats-cards">
+                        <div class="stat-card">
+                            <div class="stat-value" id="total-visits">{{ pr_visits_raw|length }}</div>
+                            <div class="stat-label">Total Visits</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="ongoing-visits">0</div>
+                            <div class="stat-label">Ongoing</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="completed-visits">0</div>
+                            <div class="stat-label">Completed</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="conversion-rate">0%</div>
+                            <div class="stat-label">Conversion</div>
+                        </div>
+                    </div>
                     
                     <div class="actions">
                         <a href="{{ url_for('main.add_pr_visit_route') }}" class="btn-primary">
@@ -33,11 +72,11 @@
                         <table id="pr-table">
                             <thead>
                                 <tr>
-                                    <th>PR Name</th>
-                                    <th>Visit Start Time</th>
-                                    <th>Client Name</th>
-                                    <th>Manager In-charge</th>
-                                    <th>Status</th>
+                                    <th>PR Name <i class="fas fa-sort"></i></th>
+                                    <th>Visit Start Time <i class="fas fa-sort"></i></th>
+                                    <th>Client Name <i class="fas fa-sort"></i></th>
+                                    <th>Manager In-charge <i class="fas fa-sort"></i></th>
+                                    <th>Status <i class="fas fa-sort"></i></th>
                                     <th>Notes</th>
                                     <th>Actions</th>
                                 </tr>
@@ -47,14 +86,14 @@
                                 {% set pr_visits = pr_visits_by_name.get(pr.name, []) %}
                                 {% if pr_visits %}
                                     {% for visit in pr_visits %}
-                                    <tr>
+                                    <tr class="visit-row" data-status="{{ visit.visit_status }}">
                                         <td>{{ pr.name }}</td>
                                         <td>{% if visit.visit_start_time %}{{ visit.visit_start_time.strftime('%H:%M') }}{% endif %}</td>
                                         <td>{{ visit.client_name }}</td>
                                         <td>{{ visit.manager_incharge }}</td>
                                         <td>
                                             <form action="{{ url_for('main.update_pr_status', id=visit.id) }}" method="post" class="status-form">
-                                                <select name="visit_status" class="status-select" onchange="this.form.submit()">
+                                                <select name="visit_status" class="status-select status-{{ visit.visit_status|replace(' ', '-')|lower }}" onchange="this.form.submit()">
                                                     <option value="Waiting to start" {% if visit.visit_status == 'Waiting to start' %}selected{% endif %}>Waiting to start</option>
                                                     <option value="On the way" {% if visit.visit_status == 'On the way' %}selected{% endif %}>On the way</option>
                                                     <option value="In visit" {% if visit.visit_status == 'In visit' %}selected{% endif %}>In visit</option>
@@ -68,11 +107,16 @@
                                         </td>
                                         <td>{{ visit.notes }}</td>
                                         <td>
-                                            <form action="{{ url_for('main.delete_pr_visit', id=visit.id) }}" method="post" class="inline-form">
-                                                <button type="submit" class="btn-icon delete" onclick="return confirm('Are you sure?')">
-                                                    <i class="fas fa-trash"></i>
+                                            <div class="action-buttons">
+                                                <button type="button" class="btn-icon followup" onclick="openFollowupModal('{{ visit.id }}', '{{ pr.name }}', '{{ visit.client_name }}')" title="Schedule Follow-up">
+                                                    <i class="fas fa-calendar-plus"></i>
                                                 </button>
-                                            </form>
+                                                <form action="{{ url_for('main.delete_pr_visit', id=visit.id) }}" method="post" class="inline-form">
+                                                    <button type="submit" class="btn-icon delete" onclick="return confirm('Are you sure?')" title="Delete Visit">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -90,7 +134,62 @@
                 
                 <!-- TC Activities Section -->
                 <div class="table-container">
-                    <h2>Today's Telecaller Activities</h2>
+                    <div class="dashboard-header">
+                        <h2>Today's Telecaller Activities</h2>
+                        <div class="dashboard-filters">
+                            <input type="text" id="tc-search" placeholder="Search..." class="search-input">
+                            <select id="tc-caller-filter" class="filter-select">
+                                <option value="all">All Telecallers</option>
+                                {% for tc in tc_team %}
+                                <option value="{{ tc.name }}">{{ tc.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- TC Stats Cards -->
+                    <div class="stats-cards">
+                        <div class="stat-card">
+                            <div class="stat-value" id="total-calls">
+                            {% set total_calls = 0 %}
+                            {% for activity in tc_activities %}
+                                {% set total_calls = total_calls + activity.calls_made %}
+                            {% endfor %}
+                            {{ total_calls }}
+                            </div>
+                            <div class="stat-label">Total Calls</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="total-booked">
+                            {% set total_booked = 0 %}
+                            {% for activity in tc_activities %}
+                                {% set total_booked = total_booked + activity.visits_booked %}
+                            {% endfor %}
+                            {{ total_booked }}
+                            </div>
+                            <div class="stat-label">Visits Booked</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="total-leads">
+                            {% set total_leads = 0 %}
+                            {% for activity in tc_activities %}
+                                {% set total_leads = total_leads + activity.leads_acquired %}
+                            {% endfor %}
+                            {{ total_leads }}
+                            </div>
+                            <div class="stat-label">New Leads</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="conversion-rate-tc">
+                            {% if total_calls > 0 %}
+                                {{ ((total_booked / total_calls) * 100) | round(1) }}%
+                            {% else %}
+                                0%
+                            {% endif %}
+                            </div>
+                            <div class="stat-label">Conversion</div>
+                        </div>
+                    </div>
                     
                     <div class="actions">
                         <a href="{{ url_for('main.add_tc_activity_route') }}" class="btn-primary">
@@ -102,19 +201,20 @@
                         <table id="tc-table">
                             <thead>
                                 <tr>
-                                    <th>Telecaller</th>
-                                    <th>Manager</th>
-                                    <th>Calls Made</th>
-                                    <th>Visits Booked</th>
-                                    <th>Visits Confirmed</th>
-                                    <th>Leads Acquired</th>
-                                    <th>Bucket Leads</th>
+                                    <th>Telecaller <i class="fas fa-sort"></i></th>
+                                    <th>Manager <i class="fas fa-sort"></i></th>
+                                    <th>Calls Made <i class="fas fa-sort"></i></th>
+                                    <th>Visits Booked <i class="fas fa-sort"></i></th>
+                                    <th>Visits Confirmed <i class="fas fa-sort"></i></th>
+                                    <th>Leads Acquired <i class="fas fa-sort"></i></th>
+                                    <th>Bucket Leads <i class="fas fa-sort"></i></th>
+                                    <th>Efficiency <i class="fas fa-sort"></i></th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for activity in tc_activities %}
-                                <tr>
+                                <tr class="tc-row">
                                     <td>{{ activity.telecaller_name }}</td>
                                     <td>{{ activity.manager_incharge }}</td>
                                     <td>{{ activity.calls_made }}</td>
@@ -122,12 +222,31 @@
                                     <td>{{ activity.visits_confirmed }}</td>
                                     <td>{{ activity.leads_acquired }}</td>
                                     <td>{{ activity.bucket_leads }}</td>
+                                    <td class="efficiency-cell">
+                                        {% if activity.calls_made > 0 %}
+                                            {% set efficiency = ((activity.visits_booked / activity.calls_made) * 100) | round(1) %}
+                                            <div class="efficiency-bar-container">
+                                                <div class="efficiency-bar" style="width: {{ efficiency if efficiency <= 100 else 100 }}%"></div>
+                                                <span class="efficiency-value">{{ efficiency }}%</span>
+                                            </div>
+                                        {% else %}
+                                            <div class="efficiency-bar-container">
+                                                <div class="efficiency-bar" style="width: 0%"></div>
+                                                <span class="efficiency-value">0%</span>
+                                            </div>
+                                        {% endif %}
+                                    </td>
                                     <td>
-                                        <form action="{{ url_for('main.delete_tc_activity', id=activity.id) }}" method="post" class="inline-form">
-                                            <button type="submit" class="btn-icon delete" onclick="return confirm('Are you sure?')">
-                                                <i class="fas fa-trash"></i>
+                                        <div class="action-buttons">
+                                            <button type="button" class="btn-icon followup" onclick="openFollowupModal('tc_{{ activity.id }}', '{{ activity.telecaller_name }}', 'TC Activity')" title="Schedule Follow-up">
+                                                <i class="fas fa-calendar-plus"></i>
                                             </button>
-                                        </form>
+                                            <form action="{{ url_for('main.delete_tc_activity', id=activity.id) }}" method="post" class="inline-form">
+                                                <button type="submit" class="btn-icon delete" onclick="return confirm('Are you sure?')" title="Delete Activity">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -147,11 +266,194 @@
         </div>
     </main>
     
+    <!-- Follow-up Modal -->
+    <div id="followup-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Schedule Follow-up</h2>
+            <form id="followup-form" action="{{ url_for('main.add_followup_route') }}" method="post">
+                <input type="hidden" id="item-id" name="item_id">
+                <input type="hidden" id="item-type" name="item_type">
+                
+                <div class="form-group">
+                    <label for="contact-name">Name</label>
+                    <input type="text" id="contact-name" name="contact_name" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="contact-details">Contact Details</label>
+                    <input type="text" id="contact-details" name="contact_details" placeholder="Phone or email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="followup-date">Follow-up Date</label>
+                    <input type="date" id="followup-date" name="followup_date" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="followup-time">Follow-up Time</label>
+                    <input type="time" id="followup-time" name="followup_time" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="followup-notes">Notes</label>
+                    <textarea id="followup-notes" name="notes" rows="3" placeholder="Enter any notes for this follow-up"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="manager-incharge">Manager In-charge</label>
+                    <select id="manager-incharge" name="manager_incharge" required>
+                        <option value="">Select Manager</option>
+                        {% for manager in sales_managers %}
+                        <option value="{{ manager.name }}">{{ manager.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Schedule Follow-up</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
     <footer>
         <p>Sales Tracking App &copy; {{ current_year }}</p>
     </footer>
     
     <script>
+        // Calculate PR visit statistics for dashboard
+        function updatePRStats() {
+            const rows = document.querySelectorAll('#pr-table tbody tr.visit-row');
+            let ongoing = 0;
+            let completed = 0;
+            let total = rows.length;
+            
+            rows.forEach(row => {
+                const status = row.getAttribute('data-status');
+                if (status === 'In visit' || status === 'On the way' || status === 'Closing call') {
+                    ongoing++;
+                } else if (status === 'Closed' || status === 'Today payment') {
+                    completed++;
+                }
+            });
+            
+            document.getElementById('ongoing-visits').textContent = ongoing;
+            document.getElementById('completed-visits').textContent = completed;
+            
+            // Calculate conversion rate (completed / total)
+            const conversionRate = total > 0 ? ((completed / total) * 100).toFixed(1) + '%' : '0%';
+            document.getElementById('conversion-rate').textContent = conversionRate;
+        }
+        
+        // Search and filter functionality for PR visits
+        function setupPRFilters() {
+            const searchInput = document.getElementById('pr-search');
+            const statusFilter = document.getElementById('pr-status-filter');
+            
+            function filterPRTable() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const statusValue = statusFilter.value;
+                
+                const rows = document.querySelectorAll('#pr-table tbody tr');
+                
+                rows.forEach(row => {
+                    if (!row.classList.contains('entry-row')) {
+                        const status = row.getAttribute('data-status');
+                        const text = row.textContent.toLowerCase();
+                        
+                        const matchesSearch = text.includes(searchTerm);
+                        const matchesStatus = statusValue === 'all' || status === statusValue;
+                        
+                        row.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
+                    }
+                });
+            }
+            
+            searchInput.addEventListener('input', filterPRTable);
+            statusFilter.addEventListener('change', filterPRTable);
+        }
+        
+        // Search and filter functionality for TC activities
+        function setupTCFilters() {
+            const searchInput = document.getElementById('tc-search');
+            const callerFilter = document.getElementById('tc-caller-filter');
+            
+            function filterTCTable() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const callerValue = callerFilter.value;
+                
+                const rows = document.querySelectorAll('#tc-table tbody tr');
+                
+                rows.forEach(row => {
+                    const callerName = row.cells[0].textContent.trim();
+                    const text = row.textContent.toLowerCase();
+                    
+                    const matchesSearch = text.includes(searchTerm);
+                    const matchesCaller = callerValue === 'all' || callerName === callerValue;
+                    
+                    row.style.display = (matchesSearch && matchesCaller) ? '' : 'none';
+                });
+            }
+            
+            searchInput.addEventListener('input', filterTCTable);
+            callerFilter.addEventListener('change', filterTCTable);
+        }
+        
+        // Table sorting functionality
+        function setupTableSorting() {
+            const tables = document.querySelectorAll('table');
+            
+            tables.forEach(table => {
+                const headers = table.querySelectorAll('th');
+                
+                headers.forEach((header, index) => {
+                    if (header.querySelector('i.fas.fa-sort')) {
+                        header.addEventListener('click', () => {
+                            sortTable(table, index);
+                        });
+                    }
+                });
+            });
+        }
+        
+        function sortTable(table, columnIndex) {
+            const header = table.querySelectorAll('th')[columnIndex];
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr:not(.entry-row)'));
+            
+            // Remove sort classes from all headers
+            table.querySelectorAll('th').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+            });
+            
+            // Determine sort direction
+            const isAscending = !header.classList.contains('sort-asc');
+            header.classList.add(isAscending ? 'sort-asc' : 'sort-desc');
+            
+            // Sort rows
+            rows.sort((a, b) => {
+                let aValue = a.cells[columnIndex].textContent.trim();
+                let bValue = b.cells[columnIndex].textContent.trim();
+                
+                // Handle numeric values
+                if (!isNaN(parseFloat(aValue)) && !isNaN(parseFloat(bValue))) {
+                    return isAscending 
+                        ? parseFloat(aValue) - parseFloat(bValue)
+                        : parseFloat(bValue) - parseFloat(aValue);
+                }
+                
+                // Handle text values
+                return isAscending
+                    ? aValue.localeCompare(bValue)
+                    : bValue.localeCompare(aValue);
+            });
+            
+            // Reorder rows
+            rows.forEach(row => tbody.appendChild(row));
+        }
+        
+        // Check for updates
         function checkForUpdates() {
             const updateStatus = document.getElementById('update-status');
             const updateBtn = document.getElementById('update-btn');
@@ -187,6 +489,54 @@
                 updateBtn.disabled = false;
             });
         }
+        
+        // Follow-up Modal Functions
+        function openFollowupModal(itemId, contactName, contactType) {
+            const modal = document.getElementById('followup-modal');
+            const idField = document.getElementById('item-id');
+            const typeField = document.getElementById('item-type');
+            const nameField = document.getElementById('contact-name');
+            const dateField = document.getElementById('followup-date');
+            
+            // Set the item ID and type
+            idField.value = itemId;
+            typeField.value = itemId.startsWith('tc_') ? 'tc' : 'pr';
+            nameField.value = contactName + ' (' + contactType + ')';
+            
+            // Set default date to tomorrow
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const formattedDate = tomorrow.toISOString().split('T')[0];
+            dateField.value = formattedDate;
+            
+            // Show the modal
+            modal.style.display = 'block';
+        }
+        
+        function closeFollowupModal() {
+            const modal = document.getElementById('followup-modal');
+            modal.style.display = 'none';
+        }
+        
+        // Initialize everything when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            updatePRStats();
+            setupPRFilters();
+            setupTCFilters();
+            setupTableSorting();
+            
+            // Set up modal close button
+            const closeBtn = document.querySelector('.close-modal');
+            closeBtn.addEventListener('click', closeFollowupModal);
+            
+            // Close modal when clicking outside of it
+            window.addEventListener('click', function(event) {
+                const modal = document.getElementById('followup-modal');
+                if (event.target === modal) {
+                    closeFollowupModal();
+                }
+            });
+        });
     </script>
 </body>
 </html>

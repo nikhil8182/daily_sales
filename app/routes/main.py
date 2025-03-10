@@ -8,7 +8,8 @@ from app.firebase_db import (
     get_team_members_by_role, get_all_team_members, add_team_member,
     toggle_team_member_status, delete_team_member, get_todays_pr_visits,
     add_pr_visit, update_pr_visit_status, delete_pr_visit,
-    get_todays_tc_activities, add_tc_activity, delete_tc_activity
+    get_todays_tc_activities, add_tc_activity, delete_tc_activity,
+    add_followup, get_all_followups, update_followup_status, update_followup, delete_followup
 )
 
 bp = Blueprint('main', __name__)
@@ -236,3 +237,94 @@ def webhook():
             'success': False,
             'message': f'An error occurred: {str(e)}'
         }), 500
+
+@bp.route('/followups', methods=['GET'])
+def followups():
+    """Display all scheduled follow-ups."""
+    today = datetime.now().date()
+    today_str = today.strftime('%Y-%m-%d')  # Format as string for template
+    current_year = today.year
+    
+    # Get all follow-ups
+    followups = get_all_followups()
+    
+    # Sort follow-ups by date (most recent first)
+    try:
+        followups.sort(key=lambda x: x.get('followup_date', datetime.now()), reverse=True)
+    except Exception as e:
+        import logging
+        logging.error(f"Error sorting followups: {str(e)}")
+    
+    # Get sales managers for the dropdown
+    sales_managers = get_team_members_by_role('SM')
+    
+    return render_template('followups.html',
+                          followups=followups,
+                          sales_managers=sales_managers,
+                          today=today_str,
+                          current_year=current_year)
+
+@bp.route('/add-followup', methods=['POST'])
+def add_followup_route():
+    """Add a new follow-up."""
+    item_id = request.form.get('item_id')
+    item_type = request.form.get('item_type')
+    contact_name = request.form.get('contact_name')
+    contact_details = request.form.get('contact_details', '')
+    followup_date = request.form.get('followup_date')
+    followup_time = request.form.get('followup_time')
+    notes = request.form.get('notes', '')
+    manager_incharge = request.form.get('manager_incharge')
+    
+    # Add the follow-up
+    add_followup(
+        item_id=item_id,
+        item_type=item_type,
+        contact_name=contact_name,
+        contact_details=contact_details,
+        followup_date=followup_date,
+        followup_time=followup_time,
+        notes=notes,
+        manager_incharge=manager_incharge
+    )
+    
+    # Redirect back to the referring page or followups page
+    return redirect(request.referrer or url_for('main.followups'))
+
+@bp.route('/update-followup-status/<string:id>', methods=['POST'])
+def update_followup_status_route(id):
+    """Update a follow-up's status."""
+    status = request.form.get('status')
+    if status:
+        update_followup_status(id, status)
+    return redirect(url_for('main.followups'))
+
+@bp.route('/update-followup', methods=['POST'])
+def update_followup_route():
+    """Update a follow-up's details."""
+    followup_id = request.form.get('followup_id')
+    contact_name = request.form.get('contact_name')
+    contact_details = request.form.get('contact_details', '')
+    followup_date = request.form.get('followup_date')
+    followup_time = request.form.get('followup_time')
+    notes = request.form.get('notes', '')
+    manager_incharge = request.form.get('manager_incharge')
+    
+    # Update the follow-up
+    update_followup(
+        followup_id=followup_id,
+        contact_name=contact_name,
+        contact_details=contact_details,
+        followup_date=followup_date,
+        followup_time=followup_time,
+        notes=notes,
+        manager_incharge=manager_incharge
+    )
+    
+    return redirect(url_for('main.followups'))
+
+@bp.route('/delete-followup/<string:id>', methods=['POST'])
+def delete_followup_route(id):
+    """Delete a follow-up."""
+    delete_followup(id)
+    return redirect(url_for('main.followups'))

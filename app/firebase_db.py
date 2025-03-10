@@ -40,6 +40,7 @@ Please follow these steps to set up Firestore:
 PR_VISITS_COLLECTION = 'pr_visits'
 TC_ACTIVITIES_COLLECTION = 'tc_activities'
 TEAM_MEMBERS_COLLECTION = 'team_members'
+FOLLOWUPS_COLLECTION = 'followups'
 
 # Helper function to convert Firestore timestamps to datetime objects
 def convert_timestamp(timestamp):
@@ -231,4 +232,83 @@ def add_tc_activity(telecaller_name, manager_incharge, calls_made, visits_booked
 
 def delete_tc_activity(activity_id):
     db.collection(TC_ACTIVITIES_COLLECTION).document(activity_id).delete()
+    return True
+
+# Followup operations
+def add_followup(item_id, item_type, contact_name, contact_details, followup_date, followup_time, notes, manager_incharge):
+    # Convert date and time strings to a combined datetime object
+    followup_datetime = None
+    try:
+        if isinstance(followup_date, str) and isinstance(followup_time, str):
+            followup_datetime = datetime.datetime.strptime(f"{followup_date} {followup_time}", "%Y-%m-%d %H:%M")
+    except ValueError:
+        logger.error(f"Invalid date or time format: {followup_date} {followup_time}")
+    
+    data = {
+        'item_id': item_id,
+        'item_type': item_type,
+        'contact_name': contact_name,
+        'contact_details': contact_details,
+        'followup_date': followup_date if isinstance(followup_date, datetime.datetime) else followup_datetime,
+        'followup_time': followup_time,
+        'notes': notes,
+        'manager_incharge': manager_incharge,
+        'status': 'pending',
+        'created_at': firestore.SERVER_TIMESTAMP,
+        'updated_at': firestore.SERVER_TIMESTAMP
+    }
+    
+    doc_ref = db.collection(FOLLOWUPS_COLLECTION).add(data)
+    return doc_ref[1].id
+
+def get_all_followups():
+    followups = []
+    docs = db.collection(FOLLOWUPS_COLLECTION).stream()
+    
+    for doc in docs:
+        followup = document_to_dict(doc)
+        # Convert timestamps to datetime objects
+        if 'followup_date' in followup and followup['followup_date']:
+            followup['followup_date'] = convert_timestamp(followup['followup_date'])
+        if 'created_at' in followup and followup['created_at']:
+            followup['created_at'] = convert_timestamp(followup['created_at'])
+        if 'updated_at' in followup and followup['updated_at']:
+            followup['updated_at'] = convert_timestamp(followup['updated_at'])
+        followups.append(followup)
+    
+    return followups
+
+def update_followup_status(followup_id, new_status):
+    doc_ref = db.collection(FOLLOWUPS_COLLECTION).document(followup_id)
+    doc_ref.update({
+        'status': new_status,
+        'updated_at': firestore.SERVER_TIMESTAMP
+    })
+    return True
+
+def update_followup(followup_id, contact_name, contact_details, followup_date, followup_time, notes, manager_incharge):
+    # Convert date and time strings to a combined datetime object
+    followup_datetime = None
+    try:
+        if isinstance(followup_date, str) and isinstance(followup_time, str):
+            followup_datetime = datetime.datetime.strptime(f"{followup_date} {followup_time}", "%Y-%m-%d %H:%M")
+    except ValueError:
+        logger.error(f"Invalid date or time format: {followup_date} {followup_time}")
+    
+    data = {
+        'contact_name': contact_name,
+        'contact_details': contact_details,
+        'followup_date': followup_date if isinstance(followup_date, datetime.datetime) else followup_datetime,
+        'followup_time': followup_time,
+        'notes': notes,
+        'manager_incharge': manager_incharge,
+        'updated_at': firestore.SERVER_TIMESTAMP
+    }
+    
+    doc_ref = db.collection(FOLLOWUPS_COLLECTION).document(followup_id)
+    doc_ref.update(data)
+    return True
+
+def delete_followup(followup_id):
+    db.collection(FOLLOWUPS_COLLECTION).document(followup_id).delete()
     return True
