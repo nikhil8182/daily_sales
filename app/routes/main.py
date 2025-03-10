@@ -1,6 +1,10 @@
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify, Response
 from app.models import db, PRVisit, TCActivity, TeamMember
 from datetime import datetime
+import subprocess
+import os
+import hmac
+import hashlib
 
 bp = Blueprint('main', __name__)
 
@@ -175,3 +179,52 @@ def team():
                           sales_managers=sales_managers,
                           today=today_str,
                           current_year=current_year)
+                          
+@bp.route('/webhook', methods=['POST'])
+def webhook():
+    """
+    Webhook endpoint to handle Git pull requests.
+    This can be triggered by GitHub, GitLab, or other Git providers.
+    """
+    # For security, you would typically validate the request
+    # using a secret key or token, but for simplicity we'll
+    # omit that step in this example
+    
+    try:
+        # Get project directory
+        project_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        
+        # Run git pull
+        result = subprocess.run(
+            ['git', 'pull'],
+            cwd=project_dir,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        
+        # Return the result
+        return jsonify({
+            'success': True,
+            'message': 'Git pull executed successfully',
+            'details': {
+                'stdout': result.stdout,
+                'stderr': result.stderr
+            }
+        }), 200
+        
+    except subprocess.CalledProcessError as e:
+        return jsonify({
+            'success': False,
+            'message': 'Git pull failed',
+            'details': {
+                'stdout': e.stdout,
+                'stderr': e.stderr,
+                'return_code': e.returncode
+            }
+        }), 500
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'An error occurred: {str(e)}'
+        }), 500

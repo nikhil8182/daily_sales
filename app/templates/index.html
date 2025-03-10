@@ -131,6 +131,14 @@
                 </div>
             </div>
         </div>
+        
+        <div class="version-info">
+            Version: <span id="version">1.0.0</span>
+            <button id="update-btn" class="btn-small" onclick="checkForUpdates()">
+                <i class="fas fa-sync-alt"></i> Check for updates
+            </button>
+            <div id="update-status"></div>
+        </div>
     </main>
     
     <footer>
@@ -156,6 +164,42 @@
             // Show the current tab and add "active" class to the button that opened the tab
             document.getElementById(tabName).classList.add("active");
             evt.currentTarget.classList.add("active");
+        }
+        
+        function checkForUpdates() {
+            const updateStatus = document.getElementById('update-status');
+            const updateBtn = document.getElementById('update-btn');
+            
+            updateStatus.innerHTML = 'Checking for updates...';
+            updateBtn.disabled = true;
+            
+            fetch('/webhook', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'check_updates'
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.details.stdout.includes('Already up to date.')) {
+                        updateStatus.innerHTML = 'Your app is up to date!';
+                    } else {
+                        updateStatus.innerHTML = 'Update successful! Refresh the page to see changes.';
+                    }
+                } else {
+                    updateStatus.innerHTML = 'Update failed: ' + data.message;
+                }
+            })
+            .catch(error => {
+                updateStatus.innerHTML = 'Error: ' + error;
+            })
+            .finally(() => {
+                updateBtn.disabled = false;
+            });
         }
     </script>
 </body>

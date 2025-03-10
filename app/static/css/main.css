@@ -125,6 +125,44 @@ footer {
     gap: 0.5rem;
 }
 
+.version-info {
+    margin-top: 2rem;
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.9rem;
+}
+
+.btn-small {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 0.3rem 0.6rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.btn-small:hover {
+    background-color: #5a6268;
+}
+
+.btn-small:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+#update-status {
+    font-style: italic;
+    color: #6c757d;
+}
+
 .pr-name-display {
     font-weight: bold;
 }
