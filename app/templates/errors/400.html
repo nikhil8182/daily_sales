@@ -1,0 +1,11 @@
+{% extends 'layout.html' %}
+
+{% block title %}Bad Request{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <h1>400 - Bad Request</h1>
+    <p>The request could not be processed.</p>
+    <a href="{{ url_for('main.index') }}" class="btn-primary">Return to Dashboard</a>
+</div>
+{% endblock %}

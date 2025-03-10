@@ -1,12 +1,11 @@
 from flask import Flask
 from app.models import db
 import os
+from config import config
 
-def create_app():
+def create_app(config_name='default'):
     app = Flask(__name__)
-    app.config['SECRET_KEY'] = 'your-secret-key'
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///sales.db'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config.from_object(config[config_name])
     
     db.init_app(app)
     
@@ -30,5 +29,9 @@ def create_app():
     
     from app.routes import main
     app.register_blueprint(main.bp)
+    
+    # Configure error pages
+    from app.error_handlers import register_error_handlers
+    register_error_handlers(app)
     
     return app

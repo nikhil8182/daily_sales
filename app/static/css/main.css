@@ -163,6 +163,25 @@ footer {
     color: #6c757d;
 }
 
+/* Error pages */
+.error-container {
+    text-align: center;
+    padding: 3rem 1rem;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.error-container h1 {
+    color: #e74c3c;
+    margin-bottom: 1.5rem;
+}
+
+.error-container p {
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+    color: #555;
+}
+
 .pr-name-display {
     font-weight: bold;
 }

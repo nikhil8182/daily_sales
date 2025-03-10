@@ -1,8 +1,11 @@
 from app import create_app
 from datetime import datetime
 import sys
+import os
 
-app = create_app()
+# Get environment from ENV variable (default to development)
+config_name = os.environ.get('FLASK_ENV', 'development')
+app = create_app(config_name)
 
 @app.context_processor
 def inject_now():
@@ -19,4 +22,10 @@ if __name__ == '__main__':
             print(f"Invalid port number: {sys.argv[2]}")
             sys.exit(1)
     
-    app.run(debug=True, port=port)
+    # Get host from environment or default to localhost
+    host = os.environ.get('HOST', '127.0.0.1')
+    
+    # Only enable debug in development
+    debug = config_name == 'development'
+    
+    app.run(host=host, port=port, debug=debug)
