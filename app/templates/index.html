@@ -29,7 +29,7 @@
                     <h2>Today's PR Visits</h2>
                     
                     <div class="actions">
-                        <a href="{{ url_for('main.add_pr_visit') }}" class="btn-primary">
+                        <a href="{{ url_for('main.add_pr_visit_route') }}" class="btn-primary">
                             <i class="fas fa-plus"></i> Add New Visit
                         </a>
                     </div>
@@ -54,7 +54,7 @@
                                     {% for visit in pr_visits %}
                                     <tr>
                                         <td>{{ pr.name }}</td>
-                                        <td>{{ visit.visit_start_time.strftime('%H:%M') }}</td>
+                                        <td>{% if visit.visit_start_time %}{{ visit.visit_start_time.strftime('%H:%M') }}{% endif %}</td>
                                         <td>{{ visit.client_name }}</td>
                                         <td>{{ visit.manager_incharge }}</td>
                                         <td>
@@ -100,7 +100,7 @@
                     <h2>Today's Telecaller Activities</h2>
                     
                     <div class="actions">
-                        <a href="{{ url_for('main.add_tc_activity') }}" class="btn-primary">
+                        <a href="{{ url_for('main.add_tc_activity_route') }}" class="btn-primary">
                             <i class="fas fa-plus"></i> Add New Activity
                         </a>
                     </div>

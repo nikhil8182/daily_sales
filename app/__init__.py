@@ -1,32 +1,26 @@
 from flask import Flask
-from app.models import db
 import os
 from config import config
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def create_app(config_name='default'):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
     
-    db.init_app(app)
-    
     # Ensure the instance folder exists
     os.makedirs(app.instance_path, exist_ok=True)
     
-    with app.app_context():
-        # Create the database and tables if they don't exist
-        db.create_all()
-        
-        # Check if we need to create some initial data
-        from app.models import TeamMember
-        if TeamMember.query.count() == 0:
-            # Add some example data
-            sample_managers = [
-                TeamMember(name="Manager 1", role="SM", active=True),
-                TeamMember(name="Manager 2", role="SM", active=True)
-            ]
-            db.session.add_all(sample_managers)
-            db.session.commit()
+    # Verify Firebase key file exists
+    firebase_key_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'fb_key_1.json')
+    if not os.path.exists(firebase_key_path):
+        logger.error(f"Firebase key file not found at: {firebase_key_path}")
+        raise RuntimeError(f"Firebase key file not found at: {firebase_key_path}")
     
+    # Register blueprints
     from app.routes import main
     app.register_blueprint(main.bp)
     

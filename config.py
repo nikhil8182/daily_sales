@@ -6,10 +6,6 @@ class Config:
     # Secret key
     SECRET_KEY = 'hardcoded-secret-key'
     
-    # Database
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///sales.db')
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    
     # Security
     REMEMBER_COOKIE_DURATION = timedelta(days=14)
     
@@ -24,7 +20,6 @@ class DevelopmentConfig(Config):
 class TestingConfig(Config):
     """Testing configuration."""
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
 
 class ProductionConfig(Config):
     """Production configuration."""

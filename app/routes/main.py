@@ -1,10 +1,15 @@
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, Response
-from app.models import db, PRVisit, TCActivity, TeamMember
 from datetime import datetime
 import subprocess
 import os
 import hmac
 import hashlib
+from app.firebase_db import (
+    get_team_members_by_role, get_all_team_members, add_team_member,
+    toggle_team_member_status, delete_team_member, get_todays_pr_visits,
+    add_pr_visit, update_pr_visit_status, delete_pr_visit,
+    get_todays_tc_activities, add_tc_activity, delete_tc_activity
+)
 
 bp = Blueprint('main', __name__)
 
@@ -14,58 +19,51 @@ def index():
         form_type = request.form.get('form_type')
         
         if form_type == 'pr':
-            visit = PRVisit(
+            add_pr_visit(
                 pr_name=request.form['pr_name'],
-                visit_start_time=datetime.strptime(request.form['visit_start_time'], '%H:%M'),
+                visit_start_time=request.form['visit_start_time'],
                 client_name=request.form['client_name'],
-                manager_response=request.form.get('manager_response', 'Pending'),
+                manager_incharge=request.form.get('manager_incharge', ''),
                 visit_status=request.form['visit_status'],
                 notes=request.form.get('notes', '')
             )
-            db.session.add(visit)
             
         elif form_type == 'tc':
-            activity = TCActivity(
+            add_tc_activity(
                 telecaller_name=request.form['telecaller_name'],
                 manager_incharge=request.form['manager_incharge'],
-                calls_made=int(request.form.get('calls_made', 0)),
-                visits_booked=int(request.form.get('visits_booked', 0)),
-                visits_confirmed=int(request.form.get('visits_confirmed', 0)),
-                leads_acquired=int(request.form.get('leads_acquired', 0)),
-                bucket_leads=int(request.form.get('bucket_leads', 0))
+                calls_made=request.form.get('calls_made', 0),
+                visits_booked=request.form.get('visits_booked', 0),
+                visits_confirmed=request.form.get('visits_confirmed', 0),
+                leads_acquired=request.form.get('leads_acquired', 0),
+                bucket_leads=request.form.get('bucket_leads', 0)
             )
-            db.session.add(activity)
         
-        db.session.commit()
         return redirect(url_for('main.index'))
     
     today = datetime.now().date()
     today_str = today.strftime('%Y-%m-%d')
     current_year = today.year
     
-    # Get PR team members first
-    pr_team = TeamMember.query.filter_by(role='PR', active=True).order_by(TeamMember.name).all()
+    # Get PR team members
+    pr_team = get_team_members_by_role('PR')
     
     # Get today's PR visits
-    pr_visits_raw = PRVisit.query.filter(
-        db.func.date(PRVisit.created_at) == today
-    ).order_by(PRVisit.visit_start_time).all()
+    pr_visits_raw = get_todays_pr_visits()
     
-    # Organize PR visits by PR name
+    # Organize PR visits by PR name with defensive programming
     pr_visits_by_name = {}
     for visit in pr_visits_raw:
-        if visit.pr_name not in pr_visits_by_name:
-            pr_visits_by_name[visit.pr_name] = []
-        pr_visits_by_name[visit.pr_name].append(visit)
+        if visit and 'pr_name' in visit:
+            pr_name = visit['pr_name']
+            if pr_name not in pr_visits_by_name:
+                pr_visits_by_name[pr_name] = []
+            pr_visits_by_name[pr_name].append(visit)
     
-    # Get TC activities
-    tc_activities = TCActivity.query.filter(
-        db.func.date(TCActivity.created_at) == today
-    ).all()
-    
-    # For telecaller team and sales managers (for dropdowns)
-    tc_team = TeamMember.query.filter_by(role='TC', active=True).all()
-    sales_managers = TeamMember.query.filter_by(role='SM', active=True).all()
+    # Get TC activities and team members
+    tc_activities = get_todays_tc_activities()
+    tc_team = get_team_members_by_role('TC')
+    sales_managers = get_team_members_by_role('SM')
     
     return render_template('index.html', 
                           pr_visits_raw=pr_visits_raw,
@@ -78,46 +76,38 @@ def index():
                           current_year=current_year,
                           current_time=datetime.now().strftime('%H:%M'))
 
-@bp.route('/delete/pr/<int:id>', methods=['POST'])
+@bp.route('/delete/pr/<string:id>', methods=['POST'])
 def delete_pr_visit(id):
-    visit = PRVisit.query.get_or_404(id)
-    db.session.delete(visit)
-    db.session.commit()
+    delete_pr_visit(id)
     return redirect(url_for('main.index'))
 
-@bp.route('/delete/tc/<int:id>', methods=['POST'])
+@bp.route('/delete/tc/<string:id>', methods=['POST'])
 def delete_tc_activity(id):
-    activity = TCActivity.query.get_or_404(id)
-    db.session.delete(activity)
-    db.session.commit()
+    delete_tc_activity(id)
     return redirect(url_for('main.index'))
 
-@bp.route('/update-pr-status/<int:id>', methods=['POST'])
+@bp.route('/update-pr-status/<string:id>', methods=['POST'])
 def update_pr_status(id):
-    visit = PRVisit.query.get_or_404(id)
     new_status = request.form.get('visit_status')
     if new_status:
-        visit.visit_status = new_status
-        db.session.commit()
+        update_pr_visit_status(id, new_status)
     return redirect(url_for('main.index'))
 
 @bp.route('/add-pr-visit', methods=['GET', 'POST'])
-def add_pr_visit():
+def add_pr_visit_route():
     if request.method == 'POST':
-        visit = PRVisit(
+        add_pr_visit(
             pr_name=request.form['pr_name'],
-            visit_start_time=datetime.strptime(request.form['visit_start_time'], '%H:%M'),
+            visit_start_time=request.form['visit_start_time'],
             client_name=request.form['client_name'],
             manager_incharge=request.form['manager_incharge'],
             visit_status=request.form['visit_status'],
             notes=request.form.get('notes', '')
         )
-        db.session.add(visit)
-        db.session.commit()
         return redirect(url_for('main.index'))
     
-    pr_team = TeamMember.query.filter_by(role='PR', active=True).order_by(TeamMember.name).all()
-    sales_managers = TeamMember.query.filter_by(role='SM', active=True).all()
+    pr_team = get_team_members_by_role('PR')
+    sales_managers = get_team_members_by_role('SM')
     current_time = datetime.now().strftime('%H:%M')
     
     return render_template('add_pr_visit.html',
@@ -126,23 +116,21 @@ def add_pr_visit():
                           current_time=current_time)
 
 @bp.route('/add-tc-activity', methods=['GET', 'POST'])
-def add_tc_activity():
+def add_tc_activity_route():
     if request.method == 'POST':
-        activity = TCActivity(
+        add_tc_activity(
             telecaller_name=request.form['telecaller_name'],
             manager_incharge=request.form['manager_incharge'],
-            calls_made=int(request.form.get('calls_made', 0)),
-            visits_booked=int(request.form.get('visits_booked', 0)),
-            visits_confirmed=int(request.form.get('visits_confirmed', 0)),
-            leads_acquired=int(request.form.get('leads_acquired', 0)),
-            bucket_leads=int(request.form.get('bucket_leads', 0))
+            calls_made=request.form.get('calls_made', 0),
+            visits_booked=request.form.get('visits_booked', 0),
+            visits_confirmed=request.form.get('visits_confirmed', 0),
+            leads_acquired=request.form.get('leads_acquired', 0),
+            bucket_leads=request.form.get('bucket_leads', 0)
         )
-        db.session.add(activity)
-        db.session.commit()
         return redirect(url_for('main.index'))
     
-    tc_team = TeamMember.query.filter_by(role='TC', active=True).all()
-    sales_managers = TeamMember.query.filter_by(role='SM', active=True).all()
+    tc_team = get_team_members_by_role('TC')
+    sales_managers = get_team_members_by_role('SM')
     
     return render_template('add_tc_activity.html',
                           tc_team=tc_team,
@@ -154,33 +142,44 @@ def team():
         action = request.form.get('action')
         
         if action == 'add':
-            member = TeamMember(
+            add_team_member(
                 name=request.form['name'],
-                role=request.form['role'],
-                active=True
+                role=request.form['role']
             )
-            db.session.add(member)
             
         elif action == 'toggle':
-            member_id = int(request.form['member_id'])
-            member = TeamMember.query.get_or_404(member_id)
-            member.active = not member.active
+            member_id = request.form['member_id']
+            toggle_team_member_status(member_id)
             
         elif action == 'delete':
-            member_id = int(request.form['member_id'])
-            member = TeamMember.query.get_or_404(member_id)
-            db.session.delete(member)
+            member_id = request.form['member_id']
+            delete_team_member(member_id)
         
-        db.session.commit()
         return redirect(url_for('main.team'))
     
     today = datetime.now().date()
     today_str = today.strftime('%Y-%m-%d')
     current_year = datetime.now().year
     
-    pr_team = TeamMember.query.filter_by(role='PR').order_by(TeamMember.name).all()
-    tc_team = TeamMember.query.filter_by(role='TC').order_by(TeamMember.name).all()
-    sales_managers = TeamMember.query.filter_by(role='SM').order_by(TeamMember.name).all()
+    # Filter members by role manually
+    all_members = get_all_team_members()
+    
+    # Use defensive programming to handle potential missing 'role' keys
+    pr_team = [m for m in all_members if m and m.get('role') == 'PR']
+    tc_team = [m for m in all_members if m and m.get('role') == 'TC']
+    sales_managers = [m for m in all_members if m and m.get('role') == 'SM']
+    
+    # Sort members by name with error handling
+    try:
+        if pr_team:
+            pr_team.sort(key=lambda x: x.get('name', ''))
+        if tc_team:
+            tc_team.sort(key=lambda x: x.get('name', ''))
+        if sales_managers:
+            sales_managers.sort(key=lambda x: x.get('name', ''))
+    except Exception as e:
+        import logging
+        logging.error(f"Error sorting team members: {str(e)}")
     
     return render_template('team.html',
                           pr_team=pr_team,
