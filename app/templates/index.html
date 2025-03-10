@@ -57,7 +57,20 @@
                                         <td>{{ visit.visit_start_time.strftime('%H:%M') }}</td>
                                         <td>{{ visit.client_name }}</td>
                                         <td>{{ visit.manager_incharge }}</td>
-                                        <td>{{ visit.visit_status }}</td>
+                                        <td>
+                                            <form action="{{ url_for('main.update_pr_status', id=visit.id) }}" method="post" class="status-form">
+                                                <select name="visit_status" class="status-select" onchange="this.form.submit()">
+                                                    <option value="Waiting to start" {% if visit.visit_status == 'Waiting to start' %}selected{% endif %}>Waiting to start</option>
+                                                    <option value="On the way" {% if visit.visit_status == 'On the way' %}selected{% endif %}>On the way</option>
+                                                    <option value="In visit" {% if visit.visit_status == 'In visit' %}selected{% endif %}>In visit</option>
+                                                    <option value="Closing call" {% if visit.visit_status == 'Closing call' %}selected{% endif %}>Closing call</option>
+                                                    <option value="Today payment" {% if visit.visit_status == 'Today payment' %}selected{% endif %}>Today payment</option>
+                                                    <option value="Closed" {% if visit.visit_status == 'Closed' %}selected{% endif %}>Closed</option>
+                                                    <option value="Rejected" {% if visit.visit_status == 'Rejected' %}selected{% endif %}>Rejected</option>
+                                                    <option value="Followup" {% if visit.visit_status == 'Followup' %}selected{% endif %}>Followup</option>
+                                                </select>
+                                            </form>
+                                        </td>
                                         <td>{{ visit.notes }}</td>
                                         <td>
                                             <form action="{{ url_for('main.delete_pr_visit', id=visit.id) }}" method="post" class="inline-form">

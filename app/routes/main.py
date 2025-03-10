@@ -92,6 +92,15 @@ def delete_tc_activity(id):
     db.session.commit()
     return redirect(url_for('main.index'))
 
+@bp.route('/update-pr-status/<int:id>', methods=['POST'])
+def update_pr_status(id):
+    visit = PRVisit.query.get_or_404(id)
+    new_status = request.form.get('visit_status')
+    if new_status:
+        visit.visit_status = new_status
+        db.session.commit()
+    return redirect(url_for('main.index'))
+
 @bp.route('/add-pr-visit', methods=['GET', 'POST'])
 def add_pr_visit():
     if request.method == 'POST':

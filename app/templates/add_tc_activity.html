@@ -7,54 +7,74 @@
     <h1>Add New Telecaller Activity</h1>
     
     <form action="{{ url_for('main.add_tc_activity') }}" method="post">
-        <div class="form-group">
-            <label for="telecaller_name">Telecaller Name</label>
-            <select id="telecaller_name" name="telecaller_name" required>
-                <option value="">Select Telecaller</option>
-                {% for member in tc_team %}
-                <option value="{{ member.name }}">{{ member.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        
-        <div class="form-group">
-            <label for="manager_incharge">Manager In-charge</label>
-            <select id="manager_incharge" name="manager_incharge" required>
-                <option value="">Select Manager</option>
-                {% for manager in sales_managers %}
-                <option value="{{ manager.name }}">{{ manager.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        
-        <div class="form-group">
-            <label for="calls_made">Calls Made</label>
-            <input type="number" id="calls_made" name="calls_made" min="0" value="0">
-        </div>
-        
-        <div class="form-group">
-            <label for="visits_booked">Visits Booked</label>
-            <input type="number" id="visits_booked" name="visits_booked" min="0" value="0">
-        </div>
-        
-        <div class="form-group">
-            <label for="visits_confirmed">Visits Confirmed</label>
-            <input type="number" id="visits_confirmed" name="visits_confirmed" min="0" value="0">
-        </div>
-        
-        <div class="form-group">
-            <label for="leads_acquired">Leads Acquired</label>
-            <input type="number" id="leads_acquired" name="leads_acquired" min="0" value="0">
-        </div>
-        
-        <div class="form-group">
-            <label for="bucket_leads">Bucket Leads</label>
-            <input type="number" id="bucket_leads" name="bucket_leads" min="0" value="0">
+        <div class="form-row">
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="telecaller_name">Telecaller Name</label>
+                    <select id="telecaller_name" name="telecaller_name" required>
+                        <option value="">Select Telecaller</option>
+                        {% for member in tc_team %}
+                        <option value="{{ member.name }}">{{ member.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="manager_incharge">Manager In-charge</label>
+                    <select id="manager_incharge" name="manager_incharge" required>
+                        <option value="">Select Manager</option>
+                        {% for manager in sales_managers %}
+                        <option value="{{ manager.name }}">{{ manager.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="calls_made">
+                        <i class="fas fa-phone"></i> Calls Made
+                    </label>
+                    <input type="number" id="calls_made" name="calls_made" min="0" value="0">
+                </div>
+                
+                <div class="form-group">
+                    <label for="visits_booked">
+                        <i class="fas fa-calendar-plus"></i> Visits Booked
+                    </label>
+                    <input type="number" id="visits_booked" name="visits_booked" min="0" value="0">
+                </div>
+            </div>
+            
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="visits_confirmed">
+                        <i class="fas fa-calendar-check"></i> Visits Confirmed
+                    </label>
+                    <input type="number" id="visits_confirmed" name="visits_confirmed" min="0" value="0">
+                </div>
+                
+                <div class="form-group">
+                    <label for="leads_acquired">
+                        <i class="fas fa-user-plus"></i> Leads Acquired
+                    </label>
+                    <input type="number" id="leads_acquired" name="leads_acquired" min="0" value="0">
+                </div>
+                
+                <div class="form-group">
+                    <label for="bucket_leads">
+                        <i class="fas fa-users"></i> Bucket Leads
+                    </label>
+                    <input type="number" id="bucket_leads" name="bucket_leads" min="0" value="0">
+                </div>
+            </div>
         </div>
         
         <div class="form-actions">
-            <button type="submit" class="btn-primary">Save</button>
-            <a href="{{ url_for('main.index') }}" class="btn-secondary">Cancel</a>
+            <button type="submit" class="btn-primary">
+                <i class="fas fa-save"></i> Save Activity
+            </button>
+            <a href="{{ url_for('main.index') }}" class="btn-secondary">
+                <i class="fas fa-times"></i> Cancel
+            </a>
         </div>
     </form>
 </div>

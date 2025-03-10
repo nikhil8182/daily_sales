@@ -358,10 +358,189 @@ datalist {
     display: none;
 }
 
+/* Status Dropdown in Table */
+.status-form {
+    margin: 0;
+    padding: 0;
+}
+
+.status-select {
+    width: 100%;
+    padding: 0.4rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.status-select:hover {
+    border-color: #3498db;
+    background-color: #edf5fc;
+}
+
+.status-select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    border-color: #3498db;
+}
+
+/* Status colors */
+.status-select option[value="Waiting to start"] {
+    background-color: #f8f9fa;
+}
+.status-select option[value="On the way"] {
+    background-color: #fffbea;
+}
+.status-select option[value="In visit"] {
+    background-color: #e3f2fd;
+}
+.status-select option[value="Closing call"] {
+    background-color: #e8f5e9;
+}
+.status-select option[value="Today payment"] {
+    background-color: #f0f4c3;
+}
+.status-select option[value="Closed"] {
+    background-color: #e0f2f1;
+}
+.status-select option[value="Rejected"] {
+    background-color: #ffebee;
+}
+.status-select option[value="Followup"] {
+    background-color: #e8eaf6;
+}
+
+/* Form Container Styles */
+.form-container {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    padding: 2rem;
+    max-width: 800px;
+    margin: 2rem auto;
+}
+
+.form-container h1 {
+    color: #2c3e50;
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+    text-align: center;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f1f1f1;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: #444;
+}
+
+.form-group input, 
+.form-group select, 
+.form-group textarea {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-family: inherit;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus, 
+.form-group select:focus, 
+.form-group textarea:focus {
+    border-color: #3498db;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+.form-group input[type="number"] {
+    text-align: center;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.btn-primary {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.3s;
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+}
+
+.btn-secondary {
+    background-color: #95a5a6;
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-block;
+    transition: background-color 0.3s;
+}
+
+.btn-secondary:hover {
+    background-color: #7f8c8d;
+}
+
+/* Form Columns */
+.form-row {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 -10px;
+}
+
+.form-col {
+    flex: 1;
+    padding: 0 10px;
+    min-width: 200px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     main {
         padding: 0.5rem;
+    }
+    
+    .form-container {
+        padding: 1.5rem;
+        margin: 1rem auto;
+    }
+    
+    .form-row {
+        flex-direction: column;
+    }
+    
+    .form-col {
+        padding: 0;
     }
     
     .tabs, .team-tabs {
