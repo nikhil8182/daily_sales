@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}Sales Tracking App{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header>
+        <h1>Daily Sales Tracking</h1>
+        <nav>
+            <a href="{{ url_for('main.index') }}" {% if request.path == url_for('main.index') %}class="active"{% endif %}>Dashboard</a>
+            <a href="{{ url_for('main.team') }}" {% if request.path == url_for('main.team') %}class="active"{% endif %}>Manage Team</a>
+        </nav>
+    </header>
+    
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    
+    <footer>
+        <p>Sales Tracking App &copy; {{ current_year }}</p>
+    </footer>
+</body>
+</html>

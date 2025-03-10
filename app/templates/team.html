@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Team - Sales Tracking App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header>
+        <h1>Manage Team</h1>
+        <div class="date-display">Today: {{ today }}</div>
+        <nav>
+            <a href="{{ url_for('main.index') }}">Dashboard</a>
+            <a href="{{ url_for('main.team') }}" class="active">Manage Team</a>
+        </nav>
+    </header>
+    
+    <main>
+        <div class="team-container">
+            <div class="team-tabs">
+                <button class="team-tab-btn active" onclick="openTeamTab(event, 'pr-team-tab')">PR Team</button>
+                <button class="team-tab-btn" onclick="openTeamTab(event, 'tc-team-tab')">TC Team</button>
+                <button class="team-tab-btn" onclick="openTeamTab(event, 'sm-team-tab')">Sales Managers</button>
+            </div>
+            
+            <!-- PR Team Tab -->
+            <div id="pr-team-tab" class="team-tab-content active">
+                <div class="team-section">
+                    <h2>PR Team Members</h2>
+                    <div class="team-list">
+                        {% for member in pr_team %}
+                        <div class="team-member {{ 'inactive' if not member.active }}">
+                            <span class="member-name">{{ member.name }}</span>
+                            <div class="member-actions">
+                                <form action="{{ url_for('main.team') }}" method="post" class="inline-form">
+                                    <input type="hidden" name="action" value="toggle">
+                                    <input type="hidden" name="member_id" value="{{ member.id }}">
+                                    <button type="submit" class="btn-icon {{ 'activate' if not member.active else 'deactivate' }}">
+                                        <i class="fas {{ 'fa-toggle-off' if not member.active else 'fa-toggle-on' }}"></i>
+                                    </button>
+                                </form>
+                                <form action="{{ url_for('main.team') }}" method="post" class="inline-form">
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="member_id" value="{{ member.id }}">
+                                    <button type="submit" class="btn-icon delete" onclick="return confirm('Are you sure you want to delete this team member?')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <form action="{{ url_for('main.team') }}" method="post" class="add-member-form">
+                        <input type="hidden" name="action" value="add">
+                        <input type="hidden" name="role" value="PR">
+                        <input type="text" name="name" placeholder="New PR name" required>
+                        <button type="submit" class="btn-primary">Add PR</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- TC Team Tab -->
+            <div id="tc-team-tab" class="team-tab-content">
+                <div class="team-section">
+                    <h2>Telecaller Team Members</h2>
+                    <div class="team-list">
+                        {% for member in tc_team %}
+                        <div class="team-member {{ 'inactive' if not member.active }}">
+                            <span class="member-name">{{ member.name }}</span>
+                            <div class="member-actions">
+                                <form action="{{ url_for('main.team') }}" method="post" class="inline-form">
+                                    <input type="hidden" name="action" value="toggle">
+                                    <input type="hidden" name="member_id" value="{{ member.id }}">
+                                    <button type="submit" class="btn-icon {{ 'activate' if not member.active else 'deactivate' }}">
+                                        <i class="fas {{ 'fa-toggle-off' if not member.active else 'fa-toggle-on' }}"></i>
+                                    </button>
+                                </form>
+                                <form action="{{ url_for('main.team') }}" method="post" class="inline-form">
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="member_id" value="{{ member.id }}">
+                                    <button type="submit" class="btn-icon delete" onclick="return confirm('Are you sure you want to delete this team member?')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <form action="{{ url_for('main.team') }}" method="post" class="add-member-form">
+                        <input type="hidden" name="action" value="add">
+                        <input type="hidden" name="role" value="TC">
+                        <input type="text" name="name" placeholder="New Telecaller name" required>
+                        <button type="submit" class="btn-primary">Add Telecaller</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- SM Team Tab -->
+            <div id="sm-team-tab" class="team-tab-content">
+                <div class="team-section">
+                    <h2>Sales Managers</h2>
+                    <div class="team-list">
+                        {% for member in sales_managers %}
+                        <div class="team-member {{ 'inactive' if not member.active }}">
+                            <span class="member-name">{{ member.name }}</span>
+                            <div class="member-actions">
+                                <form action="{{ url_for('main.team') }}" method="post" class="inline-form">
+                                    <input type="hidden" name="action" value="toggle">
+                                    <input type="hidden" name="member_id" value="{{ member.id }}">
+                                    <button type="submit" class="btn-icon {{ 'activate' if not member.active else 'deactivate' }}">
+                                        <i class="fas {{ 'fa-toggle-off' if not member.active else 'fa-toggle-on' }}"></i>
+                                    </button>
+                                </form>
+                                <form action="{{ url_for('main.team') }}" method="post" class="inline-form">
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="member_id" value="{{ member.id }}">
+                                    <button type="submit" class="btn-icon delete" onclick="return confirm('Are you sure you want to delete this team member?')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <form action="{{ url_for('main.team') }}" method="post" class="add-member-form">
+                        <input type="hidden" name="action" value="add">
+                        <input type="hidden" name="role" value="SM">
+                        <input type="text" name="name" placeholder="New Manager name" required>
+                        <button type="submit" class="btn-primary">Add Manager</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer>
+        <p>Sales Tracking App &copy; {{ current_year }}</p>
+    </footer>
+    
+    <script>
+        function openTeamTab(evt, tabName) {
+            var i, tabContent, tabButtons;
+            
+            // Hide all tab content
+            tabContent = document.getElementsByClassName("team-tab-content");
+            for (i = 0; i < tabContent.length; i++) {
+                tabContent[i].classList.remove("active");
+            }
+            
+            // Remove "active" class from all tab buttons
+            tabButtons = document.getElementsByClassName("team-tab-btn");
+            for (i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove("active");
+            }
+            
+            // Show the current tab and add "active" class to the button that opened the tab
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sales Tracking App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header>
+        <h1>Daily Sales Tracking</h1>
+        <div class="date-display">Today: {{ today }}</div>
+        <nav>
+            <a href="{{ url_for('main.index') }}" class="active">Dashboard</a>
+            <a href="{{ url_for('main.team') }}">Manage Team</a>
+        </nav>
+    </header>
+    
+    <main>
+        <div class="tab-container">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="openTab(event, 'pr-tab')">PR Visits</button>
+                <button class="tab-btn" onclick="openTab(event, 'tc-tab')">TC Activities</button>
+            </div>
+            
+            <!-- PR Tab -->
+            <div id="pr-tab" class="tab-content active">
+                <div class="table-container">
+                    <h2>Today's PR Visits</h2>
+                    
+                    <div class="actions">
+                        <a href="{{ url_for('main.add_pr_visit') }}" class="btn-primary">
+                            <i class="fas fa-plus"></i> Add New Visit
+                        </a>
+                    </div>
+                    
+                    <div class="table-scroll">
+                        <table id="pr-table">
+                            <thead>
+                                <tr>
+                                    <th>PR Name</th>
+                                    <th>Visit Start Time</th>
+                                    <th>Client Name</th>
+                                    <th>Manager In-charge</th>
+                                    <th>Status</th>
+                                    <th>Notes</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pr in pr_team %}
+                                {% set pr_visits = pr_visits_by_name.get(pr.name, []) %}
+                                {% if pr_visits %}
+                                    {% for visit in pr_visits %}
+                                    <tr>
+                                        <td>{{ pr.name }}</td>
+                                        <td>{{ visit.visit_start_time.strftime('%H:%M') }}</td>
+                                        <td>{{ visit.client_name }}</td>
+                                        <td>{{ visit.manager_incharge }}</td>
+                                        <td>{{ visit.visit_status }}</td>
+                                        <td>{{ visit.notes }}</td>
+                                        <td>
+                                            <form action="{{ url_for('main.delete_pr_visit', id=visit.id) }}" method="post" class="inline-form">
+                                                <button type="submit" class="btn-icon delete" onclick="return confirm('Are you sure?')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr class="entry-row">
+                                        <td>{{ pr.name }}</td>
+                                        <td colspan="6">No visits recorded today</td>
+                                    </tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- TC Tab -->
+            <div id="tc-tab" class="tab-content">
+                <div class="table-container">
+                    <h2>Today's Telecaller Activities</h2>
+                    
+                    <div class="actions">
+                        <a href="{{ url_for('main.add_tc_activity') }}" class="btn-primary">
+                            <i class="fas fa-plus"></i> Add New Activity
+                        </a>
+                    </div>
+                    
+                    <div class="table-scroll">
+                        <table id="tc-table">
+                            <thead>
+                                <tr>
+                                    <th>Telecaller</th>
+                                    <th>Manager</th>
+                                    <th>Calls Made</th>
+                                    <th>Visits Booked</th>
+                                    <th>Visits Confirmed</th>
+                                    <th>Leads Acquired</th>
+                                    <th>Bucket Leads</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for activity in tc_activities %}
+                                <tr>
+                                    <td>{{ activity.telecaller_name }}</td>
+                                    <td>{{ activity.manager_incharge }}</td>
+                                    <td>{{ activity.calls_made }}</td>
+                                    <td>{{ activity.visits_booked }}</td>
+                                    <td>{{ activity.visits_confirmed }}</td>
+                                    <td>{{ activity.leads_acquired }}</td>
+                                    <td>{{ activity.bucket_leads }}</td>
+                                    <td>
+                                        <form action="{{ url_for('main.delete_tc_activity', id=activity.id) }}" method="post" class="inline-form">
+                                            <button type="submit" class="btn-icon delete" onclick="return confirm('Are you sure?')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer>
+        <p>Sales Tracking App &copy; {{ current_year }}</p>
+    </footer>
+    
+    <script>
+        function openTab(evt, tabName) {
+            var i, tabContent, tabButtons;
+            
+            // Hide all tab content
+            tabContent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabContent.length; i++) {
+                tabContent[i].classList.remove("active");
+            }
+            
+            // Remove "active" class from all tab buttons
+            tabButtons = document.getElementsByClassName("tab-btn");
+            for (i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove("active");
+            }
+            
+            // Show the current tab and add "active" class to the button that opened the tab
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+    </script>
+</body>
+</html>

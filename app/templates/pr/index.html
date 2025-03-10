@@ -1,0 +1,47 @@
+{% extends 'layout.html' %}
+
+{% block title %}PR Visits{% endblock %}
+
+{% block content %}
+<div class="pr-visits">
+    <h1>PR Visits</h1>
+    
+    <div class="actions">
+        <a href="{{ url_for('pr.new_visit') }}" class="btn-primary">Add New Visit</a>
+    </div>
+    
+    {% if visits %}
+    <table>
+        <thead>
+            <tr>
+                <th>Start Time</th>
+                <th>Client Name</th>
+                <th>PR Name</th>
+                <th>Manager Response</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for visit in visits %}
+            <tr>
+                <td>{{ visit.visit_start_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>{{ visit.client_name }}</td>
+                <td>{{ visit.pr_name }}</td>
+                <td>{{ visit.manager_response }}</td>
+                <td>{{ visit.visit_status }}</td>
+                <td class="actions">
+                    <a href="{{ url_for('pr.edit_visit', id=visit.id) }}" class="btn-edit">Edit</a>
+                    <form action="{{ url_for('pr.delete_visit', id=visit.id) }}" method="post" class="inline-form">
+                        <button type="submit" class="btn-delete" onclick="return confirm('Are you sure?')">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No PR visits recorded yet.</p>
+    {% endif %}
+</div>
+{% endblock %}
