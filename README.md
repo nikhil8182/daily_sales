@@ -1,6 +1,6 @@
 # Sales Tracking App
 
-A Flask web application for tracking sales activities, including PR visits and telecaller activities.
+A Flask web application for tracking sales activities using Firebase Firestore, including PR visits and telecaller activities.
 
 ## Features
 
@@ -19,6 +19,12 @@ A Flask web application for tracking sales activities, including PR visits and t
 
 ## Installation and Setup
 
+### Prerequisites
+You need a Firebase project with Firestore set up:
+1. Create a Firebase project at https://console.firebase.google.com/
+2. Set up a Firestore database in Native mode
+3. Download the service account key file and save it as `fb_key_1.json` in the project root directory
+
 ### Local Development
 
 1. Clone the repository
@@ -32,11 +38,12 @@ A Flask web application for tracking sales activities, including PR visits and t
    pip install -r requirements.txt
    ```
 4. Create a `.env` file based on `.env.example`
-5. Run the application:
+5. Add your Firebase service account key file as `fb_key_1.json` in the project root
+6. Run the application:
    ```
    python run.py
    ```
-6. Access the application at http://localhost:5001
+7. Access the application at http://localhost:5001
 
 ### Production Deployment on AWS EC2
 
@@ -71,9 +78,6 @@ sudo apt upgrade -y
 
 # Install Python, pip, git, and other dependencies
 sudo apt install -y python3-pip python3-venv git nginx
-
-# Install PostgreSQL if you want to use it instead of SQLite
-sudo apt install -y postgresql postgresql-contrib
 ```
 
 #### 4. Clone the Repository
@@ -102,7 +106,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-#### 6. Set Up Environment Variables
+#### 6. Set Up Environment Variables and Firebase
 
 ```bash
 # Create .env file
@@ -115,30 +119,15 @@ Edit the .env file with production settings:
 FLASK_ENV=production
 FLASK_APP=wsgi.py
 SECRET_KEY=your-secure-random-string
-DATABASE_URL=sqlite:///sales.db
-# Or for PostgreSQL:
-# DATABASE_URL=postgresql://username:password@localhost/salesdb
 ```
 
-#### 7. Set Up Database (PostgreSQL - Optional)
-
-If using PostgreSQL instead of SQLite:
-
+Important: Add your Firebase service account key file:
 ```bash
-# Connect to PostgreSQL
-sudo -u postgres psql
-
-# Create database and user
-CREATE DATABASE salesdb;
-CREATE USER salesuser WITH PASSWORD 'your-password';
-GRANT ALL PRIVILEGES ON DATABASE salesdb TO salesuser;
-\q
-
-# Update DATABASE_URL in .env
-DATABASE_URL=postgresql://salesuser:your-password@localhost/salesdb
+# Copy your Firebase service account key to the server
+scp -i /path/to/your-key.pem /path/to/your/fb_key_1.json ubuntu@your-ec2-public-dns:/var/www/salesapp/fb_key_1.json
 ```
 
-#### 8. Set Up Gunicorn Service
+#### 7. Set Up Gunicorn Service
 
 Create a system service file:
 
@@ -173,7 +162,7 @@ sudo systemctl enable salesapp
 sudo systemctl status salesapp
 ```
 
-#### 9. Configure Nginx
+#### 8. Configure Nginx
 
 Create an Nginx configuration file:
 
@@ -203,7 +192,7 @@ sudo nginx -t
 sudo systemctl restart nginx
 ```
 
-#### 10. Set Up Webhook for Automatic Updates (Optional)
+#### 9. Set Up Webhook for Automatic Updates (Optional)
 
 To enable the webhook for automatic updates:
 
@@ -214,7 +203,7 @@ To enable the webhook for automatic updates:
    ```
 3. Make sure the application has permissions to execute git commands
 
-#### 11. Set Up SSL with Let's Encrypt (Recommended)
+#### 10. Set Up SSL with Let's Encrypt (Recommended)
 
 ```bash
 sudo apt install -y certbot python3-certbot-nginx
@@ -235,52 +224,39 @@ You can also use this webhook with GitHub, GitLab, or other Git providers to aut
 
 ## Database Management
 
-The application uses SQLAlchemy with SQLite by default. The database will be created automatically when the application is first run. You can switch to other database backends by changing the `DATABASE_URL` environment variable.
+The application uses Firebase Firestore for its database. Data modeling is documented in `app/models.py` and all database operations are handled by `app/firebase_db.py`.
 
-### Database Backup (EC2)
+### Firebase Firestore Collections
 
-To back up your SQLite database on EC2:
+The application uses three main collections:
+- `team_members`: Stores PR, TC, and SM (Sales Manager) team member data
+- `pr_visits`: Stores PR visit activity information
+- `tc_activities`: Stores telecaller activity information
 
-```bash
-# Create a backup directory
-mkdir -p /var/www/salesapp/backups
+### Firebase Project Setup
 
-# Back up the database (run daily with cron)
-cp /var/www/salesapp/instance/sales.db /var/www/salesapp/backups/sales_$(date +%Y-%m-%d).db
-```
+1. Create a project in the Firebase console (https://console.firebase.google.com/)
+2. Set up Firestore database in "Native" mode (not Datastore mode)
+3. Create a service account and download the key file
+4. Place the key file as `fb_key_1.json` in the project root directory
 
-For PostgreSQL:
+### Backing Up Firestore Data
 
-```bash
-# PostgreSQL backup
-pg_dump -U salesuser salesdb > /var/www/salesapp/backups/salesdb_$(date +%Y-%m-%d).sql
-```
-
-### Setting Up Automated Backups
-
-Create a cron job for daily backups:
+You can export Firestore data using the Firebase Admin SDK or the gcloud CLI:
 
 ```bash
-# Open crontab editor
-crontab -e
+# Install gcloud CLI (if not already installed)
+curl https://sdk.cloud.google.com | bash
 
-# Add the following line for daily backups at 2 AM
-0 2 * * * cp /var/www/salesapp/instance/sales.db /var/www/salesapp/backups/sales_$(date +\%Y-\%m-\%d).db
+# Authenticate 
+gcloud auth login
 
-# For PostgreSQL
-# 0 2 * * * pg_dump -U salesuser salesdb > /var/www/salesapp/backups/salesdb_$(date +\%Y-\%m-\%d).sql
+# Set your project
+gcloud config set project your-firebase-project-id
+
+# Export data to Google Cloud Storage
+gcloud firestore export gs://your-backup-bucket-name/backups/$(date +%Y-%m-%d)
 ```
-
-### Database Migrations
-
-If you need to make changes to the database schema after deployment, you might need to perform migrations:
-
-1. Back up your existing database
-2. Apply schema changes through your application or manually
-3. Restart the application service:
-   ```bash
-   sudo systemctl restart salesapp
-   ```
 
 ## Project Structure
 
@@ -289,7 +265,8 @@ daily_sales/
 │
 ├── app/
 │   ├── __init__.py
-│   ├── models.py
+│   ├── models.py          # Contains documentation of Firebase data models
+│   ├── firebase_db.py     # Contains all Firebase database operations
 │   ├── error_handlers.py
 │   ├── static/
 │   │   └── css/
@@ -307,11 +284,14 @@ daily_sales/
 │   │       └── 400.html
 │   └── routes/
 │       ├── __init__.py
-│       └── main.py
+│       ├── main.py
+│       ├── pr.py
+│       └── tc.py
 │
 ├── config.py
 ├── run.py
 ├── wsgi.py
+├── fb_key_1.json          # Firebase service account key (not committed to git)
 ├── requirements.txt
 ├── .env.example
 └── README.md
@@ -331,19 +311,16 @@ sudo journalctl -u salesapp
 Common issues:
 - Permission problems: Check file permissions in /var/www/salesapp
 - Environment variables: Make sure .env file exists and is correctly formatted
-- Database connection: Verify database credentials
+- Firebase setup: Verify that fb_key_1.json exists and has correct permissions
+- Network issues: Ensure the server can connect to Firebase
 
-### Database Issues
+### Firebase Connection Issues
 
-If you have database problems:
-
-```bash
-# For SQLite
-sqlite3 /var/www/salesapp/instance/sales.db .tables
-
-# For PostgreSQL
-sudo -u postgres psql -d salesdb -c "\dt"
-```
+If you're having trouble connecting to Firebase:
+- Check that the firebase key file exists and has the correct permissions
+- Verify that your Firebase project has Firestore enabled in Native mode
+- Ensure your IAM permissions are correct for the service account
+- Check if there are any outbound firewall rules blocking the connection
 
 ### Nginx Problems
 
@@ -359,4 +336,5 @@ sudo journalctl -u nginx
 
 - Check file permissions: `sudo chown -R ubuntu:www-data /var/www/salesapp`
 - Restart services: `sudo systemctl restart salesapp nginx`
-- Check ports: `sudo netstat -tulpn | grep LISTEN`
+- Check port availability: `sudo netstat -tulpn | grep LISTEN`
+- View application logs: `journalctl -u salesapp -f`
