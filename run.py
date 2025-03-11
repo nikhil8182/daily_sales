@@ -23,7 +23,7 @@ if __name__ == '__main__':
             sys.exit(1)
     
     # Get host from environment or default to localhost
-    host = os.environ.get('HOST', '127.0.0.1')
+    host = os.environ.get('HOST', '0.0.0.0')
     
     # Only enable debug in development
     debug = config_name == 'development'
