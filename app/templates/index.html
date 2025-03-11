@@ -47,8 +47,13 @@
                     <!-- Statistics Cards -->
                     <div class="stats-cards">
                         <div class="stat-card">
-                            <div class="stat-value" id="total-visits">{{ pr_visits_raw|length }}</div>
-                            <div class="stat-label">Total Visits</div>
+                            <div class="stat-value" id="total-visits">{{ pr_visits_raw|length }}<span class="target-indicator">/{{ pr_team|length * 1.5|int }}</span></div>
+                            <div class="progress-bar"></div>
+                            <div class="stat-label">Total Visits/Target</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="yet-to-start">0</div>
+                            <div class="stat-label">Yet to Start</div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-value" id="ongoing-visits">0</div>
@@ -57,6 +62,10 @@
                         <div class="stat-card">
                             <div class="stat-value" id="completed-visits">0</div>
                             <div class="stat-label">Completed</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="closed-visits">0</div>
+                            <div class="stat-label">Closed</div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-value" id="conversion-rate">0%</div>
@@ -91,8 +100,8 @@
                                 {% if pr_visits %}
                                     {% for visit in pr_visits %}
                                     <tr class="visit-row" data-status="{{ visit.visit_status }}">
-                                        <td>{{ pr.name }}</td>
-                                        <td>
+                                        <td data-label="PR Name">{{ pr.name }}</td>
+                                        <td data-label="Visit Time">
                                             {% if visit.visit_start_time %}
                                                 {% if visit.visit_start_time is string %}
                                                     {{ visit.visit_start_time }}
@@ -107,9 +116,9 @@
                                                 -
                                             {% endif %}
                                         </td>
-                                        <td>{{ visit.client_name }}</td>
-                                        <td>{{ visit.manager_incharge }}</td>
-                                        <td>
+                                        <td data-label="Client">{{ visit.client_name }}</td>
+                                        <td data-label="Manager">{{ visit.manager_incharge }}</td>
+                                        <td data-label="Status">
                                             <form action="{{ url_for('main.update_pr_status', id=visit.id) }}" method="post" class="status-form">
                                                 <select name="visit_status" class="status-select status-{{ visit.visit_status|replace(' ', '-')|lower }}" onchange="this.form.submit()">
                                                     <option value="Waiting to start" {% if visit.visit_status == 'Waiting to start' %}selected{% endif %}>Waiting to start</option>
@@ -123,7 +132,7 @@
                                                 </select>
                                             </form>
                                         </td>
-                                        <td>{{ visit.notes }}</td>
+                                        <td data-label="Notes">{{ visit.notes }}</td>
                                         <td>
                                             <div class="action-buttons">
                                                 <button type="button" class="btn-icon followup" onclick="openFollowupModal('{{ visit.id }}', '{{ pr.name }}', '{{ visit.client_name }}')" title="Schedule Follow-up">
@@ -233,14 +242,14 @@
                                 
                                 {% for activity in tc_activities %}
                                 <tr class="tc-row">
-                                    <td>{{ activity.telecaller_name }}</td>
-                                    <td>{{ activity.manager_incharge }}</td>
-                                    <td>{{ activity.calls_made }}</td>
-                                    <td>{{ activity.visits_booked }}</td>
-                                    <td>{{ activity.visits_confirmed }}</td>
-                                    <td>{{ activity.leads_acquired }}</td>
-                                    <td>{{ activity.bucket_leads }}</td>
-                                    <td class="efficiency-cell">
+                                    <td data-label="Telecaller">{{ activity.telecaller_name }}</td>
+                                    <td data-label="Manager">{{ activity.manager_incharge }}</td>
+                                    <td data-label="Calls Made">{{ activity.calls_made }}</td>
+                                    <td data-label="Visits Booked">{{ activity.visits_booked }}</td>
+                                    <td data-label="Visits Confirmed">{{ activity.visits_confirmed }}</td>
+                                    <td data-label="Leads Acquired">{{ activity.leads_acquired }}</td>
+                                    <td data-label="Bucket Leads">{{ activity.bucket_leads }}</td>
+                                    <td data-label="Efficiency" class="efficiency-cell">
                                         {% if activity.calls_made > 0 %}
                                             {% set efficiency = ((activity.visits_booked / activity.calls_made) * 100) | round(1) %}
                                             <div class="efficiency-bar-container">
@@ -340,24 +349,72 @@
         // Calculate PR visit statistics for dashboard
         function updatePRStats() {
             const rows = document.querySelectorAll('#pr-table tbody tr.visit-row');
+            let yetToStart = 0;
             let ongoing = 0;
             let completed = 0;
+            let closed = 0;
             let total = rows.length;
             
             rows.forEach(row => {
                 const status = row.getAttribute('data-status');
-                if (status === 'In visit' || status === 'On the way' || status === 'Closing call') {
+                // Yet to start (separate category)
+                if (status === 'Waiting to start') {
+                    yetToStart++;
+                }
+                // Only visits in these statuses are considered ongoing
+                else if (status === 'In visit' || status === 'On the way') {
                     ongoing++;
-                } else if (status === 'Closed' || status === 'Today payment') {
+                } 
+                // Completed visits include all finalized visits
+                else if (status === 'Closing call' || status === 'Today payment' || status === 'Closed' || 
+                         status === 'Rejected' || status === 'Followup') {
                     completed++;
+                    
+                    // Count successful closed deals separately (for conversion rate)
+                    if (status === 'Closed' || status === 'Today payment') {
+                        closed++;
+                    }
                 }
             });
             
+            // Keep the target suffix when updating the visit count
+            const totalVisitsElement = document.getElementById('total-visits');
+            const targetPart = totalVisitsElement.querySelector('.target-indicator');
+            if (targetPart) {
+                totalVisitsElement.childNodes[0].nodeValue = total;
+                
+                // Update progress bar
+                const targetValue = parseInt(targetPart.textContent.substring(1));
+                const progressPercent = Math.min(total / targetValue * 100, 100);
+                const progressBar = document.querySelector('.stat-card:nth-child(1) .progress-bar');
+                if (progressBar) {
+                    progressBar.style.width = progressPercent + '%';
+                }
+                
+                // Add a class to the card based on progress
+                const statCard = document.querySelector('.stat-card:nth-child(1)');
+                if (statCard) {
+                    statCard.classList.remove('target-reached', 'target-close', 'target-low');
+                    
+                    if (progressPercent >= 100) {
+                        statCard.classList.add('target-reached');
+                    } else if (progressPercent >= 75) {
+                        statCard.classList.add('target-close');
+                    } else {
+                        statCard.classList.add('target-low');
+                    }
+                }
+            } else {
+                totalVisitsElement.textContent = total;
+            }
+            
+            document.getElementById('yet-to-start').textContent = yetToStart;
             document.getElementById('ongoing-visits').textContent = ongoing;
             document.getElementById('completed-visits').textContent = completed;
+            document.getElementById('closed-visits').textContent = closed;
             
-            // Calculate conversion rate (completed / total)
-            const conversionRate = total > 0 ? ((completed / total) * 100).toFixed(1) + '%' : '0%';
+            // Calculate conversion rate (closed / total) - only counting truly closed deals
+            const conversionRate = total > 0 ? ((closed / total) * 100).toFixed(1) + '%' : '0%';
             document.getElementById('conversion-rate').textContent = conversionRate;
         }
         

@@ -3,79 +3,168 @@
 {% block title %}Add TC Activity{% endblock %}
 
 {% block content %}
-<div class="form-container">
-    <h1>Add New Telecaller Activity</h1>
+<div class="form-container compact-form">
+    <div class="compact-header">
+        <h1><i class="fas fa-headset"></i> Add New Telecaller Activity</h1>
+    </div>
     
     <form action="{{ url_for('main.add_tc_activity_route') }}" method="post">
-        <div class="form-row">
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="telecaller_name">Telecaller Name</label>
-                    <select id="telecaller_name" name="telecaller_name" required>
-                        <option value="">Select Telecaller</option>
-                        {% for member in tc_team %}
-                        <option value="{{ member.name }}">{{ member.name }}</option>
-                        {% endfor %}
-                    </select>
+        <div class="form-grid">
+            <!-- Team Information -->
+            <div class="grid-section team-section">
+                <div class="grid-col">
+                    <div class="form-group compact-group">
+                        <label for="telecaller_name">
+                            <i class="fas fa-user"></i> Telecaller
+                        </label>
+                        <select id="telecaller_name" name="telecaller_name" required class="enhanced-select">
+                            <option value="">Select Telecaller</option>
+                            {% for member in tc_team %}
+                            <option value="{{ member.name }}">{{ member.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label for="manager_incharge">Manager In-charge</label>
-                    <select id="manager_incharge" name="manager_incharge" required>
-                        <option value="">Select Manager</option>
-                        {% for manager in sales_managers %}
-                        <option value="{{ manager.name }}">{{ manager.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="calls_made">
-                        <i class="fas fa-phone"></i> Calls Made
-                    </label>
-                    <input type="number" id="calls_made" name="calls_made" min="0" value="0">
-                </div>
-                
-                <div class="form-group">
-                    <label for="visits_booked">
-                        <i class="fas fa-calendar-plus"></i> Visits Booked
-                    </label>
-                    <input type="number" id="visits_booked" name="visits_booked" min="0" value="0">
+                <div class="grid-col">
+                    <div class="form-group compact-group">
+                        <label for="manager_incharge">
+                            <i class="fas fa-user-tie"></i> Manager
+                        </label>
+                        <select id="manager_incharge" name="manager_incharge" required class="enhanced-select">
+                            <option value="">Select Manager</option>
+                            {% for manager in sales_managers %}
+                            <option value="{{ manager.name }}">{{ manager.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
             </div>
             
-            <div class="form-col">
-                <div class="form-group">
-                    <label for="visits_confirmed">
-                        <i class="fas fa-calendar-check"></i> Visits Confirmed
-                    </label>
-                    <input type="number" id="visits_confirmed" name="visits_confirmed" min="0" value="0">
+            <!-- Metrics Grid -->
+            <div class="grid-section metrics-grid">
+                <!-- Call Metrics -->
+                <div class="grid-col">
+                    <div class="metric-compact">
+                        <div class="metric-icon small-icon">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        <div class="metric-content">
+                            <label for="calls_made">Calls Made</label>
+                            <input type="number" id="calls_made" name="calls_made" min="0" value="0" class="compact-input">
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label for="leads_acquired">
-                        <i class="fas fa-user-plus"></i> Leads Acquired
-                    </label>
-                    <input type="number" id="leads_acquired" name="leads_acquired" min="0" value="0">
+                <div class="grid-col">
+                    <div class="metric-compact">
+                        <div class="metric-icon small-icon booking-icon">
+                            <i class="fas fa-calendar-plus"></i>
+                        </div>
+                        <div class="metric-content">
+                            <label for="visits_booked">Visits Booked</label>
+                            <input type="number" id="visits_booked" name="visits_booked" min="0" value="0" class="compact-input">
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label for="bucket_leads">
-                        <i class="fas fa-users"></i> Bucket Leads
-                    </label>
-                    <input type="number" id="bucket_leads" name="bucket_leads" min="0" value="0">
+                <div class="grid-col">
+                    <div class="metric-compact">
+                        <div class="metric-icon small-icon confirmed-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="metric-content">
+                            <label for="visits_confirmed">Confirmed</label>
+                            <input type="number" id="visits_confirmed" name="visits_confirmed" min="0" value="0" class="compact-input">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Lead Metrics -->
+                <div class="grid-col">
+                    <div class="metric-compact">
+                        <div class="metric-icon small-icon leads-icon">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div class="metric-content">
+                            <label for="leads_acquired">Leads Acquired</label>
+                            <input type="number" id="leads_acquired" name="leads_acquired" min="0" value="0" class="compact-input">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid-col">
+                    <div class="metric-compact">
+                        <div class="metric-icon small-icon bucket-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="metric-content">
+                            <label for="bucket_leads">Bucket Leads</label>
+                            <input type="number" id="bucket_leads" name="bucket_leads" min="0" value="0" class="compact-input">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Efficiency -->
+                <div class="grid-col">
+                    <div class="efficiency-compact">
+                        <div class="efficiency-label">Efficiency: <span class="efficiency-value">0%</span></div>
+                        <div class="efficiency-bar-container">
+                            <div class="efficiency-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="form-actions">
-            <button type="submit" class="btn-primary">
-                <i class="fas fa-save"></i> Save Activity
-            </button>
-            <a href="{{ url_for('main.index') }}" class="btn-secondary">
-                <i class="fas fa-times"></i> Cancel
-            </a>
+            
+            <!-- Form Actions -->
+            <div class="form-actions compact-actions">
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-save"></i> Save
+                </button>
+                <a href="{{ url_for('main.index') }}" class="btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
         </div>
     </form>
 </div>
+
+<script>
+    // Calculate efficiency based on visits booked / calls made
+    function calculateEfficiency() {
+        const callsMade = parseInt(document.getElementById('calls_made').value) || 0;
+        const visitsBooked = parseInt(document.getElementById('visits_booked').value) || 0;
+        
+        let efficiency = 0;
+        if (callsMade > 0) {
+            efficiency = (visitsBooked / callsMade) * 100;
+        }
+        
+        // Cap at 100% for display purposes
+        const displayEfficiency = Math.min(efficiency, 100).toFixed(1);
+        
+        // Update the UI
+        document.querySelector('.efficiency-value').textContent = displayEfficiency + '%';
+        document.querySelector('.efficiency-bar').style.width = displayEfficiency + '%';
+        
+        // Add color classes based on efficiency value
+        const efficiencyBar = document.querySelector('.efficiency-bar');
+        efficiencyBar.className = 'efficiency-bar';
+        
+        if (efficiency >= 30) {
+            efficiencyBar.classList.add('high-efficiency');
+        } else if (efficiency >= 15) {
+            efficiencyBar.classList.add('medium-efficiency');
+        } else {
+            efficiencyBar.classList.add('low-efficiency');
+        }
+    }
+    
+    // Add event listeners to inputs
+    document.getElementById('calls_made').addEventListener('input', calculateEfficiency);
+    document.getElementById('visits_booked').addEventListener('input', calculateEfficiency);
+    
+    // Initial calculation
+    calculateEfficiency();
+</script>
 {% endblock %}
