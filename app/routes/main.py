@@ -117,12 +117,12 @@ def index():
                           current_time=datetime.now().strftime('%H:%M'))
 
 @bp.route('/delete/pr/<string:id>', methods=['POST'])
-def delete_pr_visit(id):
+def delete_pr_visit_route(id):
     delete_pr_visit(id)
     return redirect(url_for('main.index'))
 
 @bp.route('/delete/tc/<string:id>', methods=['POST'])
-def delete_tc_activity(id):
+def delete_tc_activity_route(id):
     delete_tc_activity(id)
     return redirect(url_for('main.index'))
 
