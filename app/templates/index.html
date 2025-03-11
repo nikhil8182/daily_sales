@@ -82,13 +82,29 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                
+                                <!-- Original structured display -->
                                 {% for pr in pr_team %}
                                 {% set pr_visits = pr_visits_by_name.get(pr.name, []) %}
                                 {% if pr_visits %}
                                     {% for visit in pr_visits %}
                                     <tr class="visit-row" data-status="{{ visit.visit_status }}">
                                         <td>{{ pr.name }}</td>
-                                        <td>{% if visit.visit_start_time %}{{ visit.visit_start_time.strftime('%H:%M') }}{% endif %}</td>
+                                        <td>
+                                            {% if visit.visit_start_time %}
+                                                {% if visit.visit_start_time is string %}
+                                                    {{ visit.visit_start_time }}
+                                                {% else %}
+                                                    {% if visit.visit_start_time.strftime %}
+                                                        {{ visit.visit_start_time.strftime('%H:%M') }}
+                                                    {% else %}
+                                                        {{ visit.visit_start_time }}
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
                                         <td>{{ visit.client_name }}</td>
                                         <td>{{ visit.manager_incharge }}</td>
                                         <td>
@@ -213,6 +229,7 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                
                                 {% for activity in tc_activities %}
                                 <tr class="tc-row">
                                     <td>{{ activity.telecaller_name }}</td>
@@ -317,9 +334,6 @@
         </div>
     </div>
     
-    <footer>
-        <p>Sales Tracking App &copy; {{ current_year }}</p>
-    </footer>
     
     <script>
         // Calculate PR visit statistics for dashboard

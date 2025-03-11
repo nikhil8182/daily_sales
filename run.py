@@ -12,7 +12,7 @@ def inject_now():
     return {'now': datetime.utcnow()}
 
 if __name__ == '__main__':
-    port = 5001
+    port = 5055
     
     # Check for port argument
     if len(sys.argv) > 1 and sys.argv[1] == '--port' and len(sys.argv) > 2:

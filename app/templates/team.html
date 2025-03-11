@@ -7,13 +7,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <header>
-        <h1>Manage Team</h1>
-        <div class="date-display">Today: {{ today }}</div>
-        <nav>
-            <a href="{{ url_for('main.index') }}">Dashboard</a>
-            <a href="{{ url_for('main.team') }}" class="active">Manage Team</a>
-        </nav>
+    <header class="sleek-header">
+        <div class="header-content">
+            <h1>Sales Tracking</h1>
+            <span class="date-badge">{{ today }}</span>
+            <nav>
+                <a href="{{ url_for('main.index') }}">Dashboard</a>
+                <a href="{{ url_for('main.team') }}" class="active">Team</a>
+                <a href="{{ url_for('main.followups') }}">Follow-ups</a>
+            </nav>
+        </div>
     </header>
     
     <main>
@@ -134,9 +137,6 @@
         </div>
     </main>
     
-    <footer>
-        <p>Sales Tracking App &copy; {{ current_year }}</p>
-    </footer>
     
     <script>
         function openTeamTab(evt, tabName) {

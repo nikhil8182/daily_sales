@@ -16,10 +16,15 @@ bp = Blueprint('main', __name__)
 
 @bp.route('/', methods=['GET', 'POST'])
 def index():
+    import logging
+    logger = logging.getLogger(__name__)
+    
     if request.method == 'POST':
         form_type = request.form.get('form_type')
+        logger.info(f"Processing POST request with form_type: {form_type}")
         
         if form_type == 'pr':
+            logger.info(f"Adding PR visit with data: {request.form}")
             add_pr_visit(
                 pr_name=request.form['pr_name'],
                 visit_start_time=request.form['visit_start_time'],
@@ -30,6 +35,7 @@ def index():
             )
             
         elif form_type == 'tc':
+            logger.info(f"Adding TC activity with data: {request.form}")
             add_tc_activity(
                 telecaller_name=request.form['telecaller_name'],
                 manager_incharge=request.form['manager_incharge'],
@@ -47,25 +53,58 @@ def index():
     current_year = today.year
     
     # Get PR team members
+    logger.info("Fetching PR team members")
     pr_team = get_team_members_by_role('PR')
+    logger.info(f"Retrieved {len(pr_team)} PR team members: {pr_team}")
     
-    # Get today's PR visits
+    # Get PR visits
+    logger.info("Fetching PR visits")
     pr_visits_raw = get_todays_pr_visits()
+    logger.info(f"Retrieved {len(pr_visits_raw)} PR visits: {pr_visits_raw}")
     
     # Organize PR visits by PR name with defensive programming
     pr_visits_by_name = {}
+    pr_names_in_visits = set()
+    
     for visit in pr_visits_raw:
         if visit and 'pr_name' in visit:
             pr_name = visit['pr_name']
+            pr_names_in_visits.add(pr_name)
             if pr_name not in pr_visits_by_name:
                 pr_visits_by_name[pr_name] = []
             pr_visits_by_name[pr_name].append(visit)
     
-    # Get TC activities and team members
-    tc_activities = get_todays_tc_activities()
-    tc_team = get_team_members_by_role('TC')
-    sales_managers = get_team_members_by_role('SM')
+    # Log PR names in visits for debugging
+    logger.info(f"PR names in visits: {pr_names_in_visits}")
+    pr_team_names = {member.get('name', '') for member in pr_team if member}
+    logger.info(f"PR team names: {pr_team_names}")
     
+    logger.info(f"Final PR team (with temp members): {len(pr_team)}")
+    logger.info(f"Organized PR visits by name: {pr_visits_by_name}")
+    
+    # Get TC activities and team members
+    logger.info("Fetching TC activities")
+    tc_activities = get_todays_tc_activities()
+    logger.info(f"Retrieved {len(tc_activities)} TC activities: {tc_activities}")
+    
+    logger.info("Fetching TC team members")
+    tc_team = get_team_members_by_role('TC')
+    logger.info(f"Retrieved {len(tc_team)} TC team members: {tc_team}")
+    
+    # Log TC names in activities for debugging
+    tc_names_in_activities = {activity.get('telecaller_name', '') for activity in tc_activities if activity}
+    tc_team_names = {member.get('name', '') for member in tc_team if member}
+    
+    logger.info(f"TC names in activities: {tc_names_in_activities}")
+    logger.info(f"TC team names: {tc_team_names}")
+    
+    logger.info("Fetching sales managers")
+    sales_managers = get_team_members_by_role('SM')
+    logger.info(f"Retrieved {len(sales_managers)} sales managers: {sales_managers}")
+    
+    # No dummy data for production use
+    
+    logger.info("Rendering index.html template")
     return render_template('index.html', 
                           pr_visits_raw=pr_visits_raw,
                           pr_visits_by_name=pr_visits_by_name,

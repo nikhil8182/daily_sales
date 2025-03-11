@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Follow-ups - Sales Tracking App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header class="sleek-header">
+        <div class="header-content">
+            <h1>Sales Tracking</h1>
+            <span class="date-badge">{{ today }}</span>
+            <nav>
+                <a href="{{ url_for('main.index') }}">Dashboard</a>
+                <a href="{{ url_for('main.team') }}">Team</a>
+                <a href="{{ url_for('main.followups') }}" class="active">Follow-ups</a>
+            </nav>
+        </div>
+    </header>
+    
+    <main>
+        <div class="tab-container">
+            <div class="tables-container">
+                <!-- Follow-ups Section -->
+                <div class="table-container">
+                    <div class="dashboard-header">
+                        <h2>Scheduled Follow-ups</h2>
+                        <div class="dashboard-filters">
+                            <input type="text" id="followup-search" placeholder="Search..." class="search-input">
+                            <select id="followup-filter" class="filter-select">
+                                <option value="all">All Types</option>
+                                <option value="pr">PR Visits</option>
+                                <option value="tc">TC Activities</option>
+                            </select>
+                            <select id="date-filter" class="filter-select">
+                                <option value="all">All Dates</option>
+                                <option value="today">Today</option>
+                                <option value="tomorrow">Tomorrow</option>
+                                <option value="week">This Week</option>
+                                <option value="month">This Month</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Stats Cards -->
+                    <div class="stats-cards">
+                        <div class="stat-card">
+                            <div class="stat-value" id="total-followups">{{ followups|length }}</div>
+                            <div class="stat-label">Total Follow-ups</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="upcoming-followups">
+                                {% set today_count = 0 %}
+                                {% for followup in followups %}
+                                    {% if followup.followup_date and today and followup.followup_date|string == today|string %}
+                                        {% set today_count = today_count + 1 %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ today_count }}
+                            </div>
+                            <div class="stat-label">Today</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="pr-followups">
+                                {% set pr_count = 0 %}
+                                {% for followup in followups %}
+                                    {% if followup.item_type == 'pr' %}
+                                        {% set pr_count = pr_count + 1 %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ pr_count }}
+                            </div>
+                            <div class="stat-label">PR Follow-ups</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="tc-followups">
+                                {% set tc_count = 0 %}
+                                {% for followup in followups %}
+                                    {% if followup.item_type == 'tc' %}
+                                        {% set tc_count = tc_count + 1 %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ tc_count }}
+                            </div>
+                            <div class="stat-label">TC Follow-ups</div>
+                        </div>
+                    </div>
+                    
+                    <div class="table-scroll followups-table-scroll">
+                        <table id="followups-table">
+                            <thead>
+                                <tr>
+                                    <th>Type <i class="fas fa-sort"></i></th>
+                                    <th>Contact <i class="fas fa-sort"></i></th>
+                                    <th>Date <i class="fas fa-sort"></i></th>
+                                    <th>Time <i class="fas fa-sort"></i></th>
+                                    <th>Manager <i class="fas fa-sort"></i></th>
+                                    <th>Notes</th>
+                                    <th>Status <i class="fas fa-sort"></i></th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for followup in followups %}
+                                <tr class="followup-row" data-type="{{ followup.item_type }}" data-date="{{ followup.followup_date|string if followup.followup_date else '' }}">
+                                    <td>
+                                        {% if followup.item_type == 'pr' %}
+                                        <span class="badge badge-primary">PR Visit</span>
+                                        {% else %}
+                                        <span class="badge badge-secondary">TC Activity</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ followup.contact_name }}</td>
+                                    <td>{{ followup.followup_date|string if followup.followup_date else 'N/A' }}</td>
+                                    <td>{{ followup.followup_time|string if followup.followup_time else 'N/A' }}</td>
+                                    <td>{{ followup.manager_incharge }}</td>
+                                    <td>{{ followup.notes }}</td>
+                                    <td>
+                                        <form action="{{ url_for('main.update_followup_status_route', id=followup.id) }}" method="post" class="status-form">
+                                            <select name="status" class="status-select status-{{ followup.status|lower }}" onchange="this.form.submit()">
+                                                <option value="pending" {% if followup.status == 'pending' %}selected{% endif %}>Pending</option>
+                                                <option value="completed" {% if followup.status == 'completed' %}selected{% endif %}>Completed</option>
+                                                <option value="cancelled" {% if followup.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                                <option value="rescheduled" {% if followup.status == 'rescheduled' %}selected{% endif %}>Rescheduled</option>
+                                            </select>
+                                        </form>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button type="button" class="btn-icon edit" onclick="openEditModal('{{ followup.id }}')" title="Edit Follow-up">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <form action="{{ url_for('main.delete_followup_route', id=followup.id) }}" method="post" class="inline-form">
+                                                <button type="submit" class="btn-icon delete" onclick="return confirm('Are you sure?')" title="Delete Follow-up">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="version-info">
+            Version: <span id="version">1.0.0</span>
+            <button id="update-btn" class="btn-small" onclick="checkForUpdates()">
+                <i class="fas fa-sync-alt"></i> Check for updates
+            </button>
+            <div id="update-status"></div>
+        </div>
+    </main>
+    
+    <!-- Edit Follow-up Modal -->
+    <div id="edit-followup-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Edit Follow-up</h2>
+            <form id="edit-followup-form" action="{{ url_for('main.update_followup_route') }}" method="post">
+                <input type="hidden" id="edit-followup-id" name="followup_id">
+                
+                <div class="form-group">
+                    <label for="edit-contact-name">Name</label>
+                    <input type="text" id="edit-contact-name" name="contact_name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-contact-details">Contact Details</label>
+                    <input type="text" id="edit-contact-details" name="contact_details" placeholder="Phone or email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-followup-date">Follow-up Date</label>
+                    <input type="date" id="edit-followup-date" name="followup_date" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-followup-time">Follow-up Time</label>
+                    <input type="time" id="edit-followup-time" name="followup_time" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-followup-notes">Notes</label>
+                    <textarea id="edit-followup-notes" name="notes" rows="3" placeholder="Enter any notes for this follow-up"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-manager-incharge">Manager In-charge</label>
+                    <select id="edit-manager-incharge" name="manager_incharge" required>
+                        <option value="">Select Manager</option>
+                        {% for manager in sales_managers %}
+                        <option value="{{ manager.name }}">{{ manager.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Update Follow-up</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    
+    <script>
+        // Search and filter functionality for followups
+        function setupFollowupFilters() {
+            const searchInput = document.getElementById('followup-search');
+            const typeFilter = document.getElementById('followup-filter');
+            const dateFilter = document.getElementById('date-filter');
+            
+            function filterFollowupsTable() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const typeValue = typeFilter.value;
+                const dateValue = dateFilter.value;
+                
+                const rows = document.querySelectorAll('#followups-table tbody tr');
+                
+                rows.forEach(row => {
+                    const type = row.getAttribute('data-type');
+                    const date = row.getAttribute('data-date');
+                    const text = row.textContent.toLowerCase();
+                    
+                    const matchesSearch = text.includes(searchTerm);
+                    const matchesType = typeValue === 'all' || type === typeValue;
+                    
+                    // Date filtering logic
+                    let matchesDate = true;
+                    if (dateValue !== 'all') {
+                        const today = new Date();
+                        const followupDate = new Date(date);
+                        
+                        if (dateValue === 'today') {
+                            matchesDate = followupDate.toDateString() === today.toDateString();
+                        } else if (dateValue === 'tomorrow') {
+                            const tomorrow = new Date();
+                            tomorrow.setDate(today.getDate() + 1);
+                            matchesDate = followupDate.toDateString() === tomorrow.toDateString();
+                        } else if (dateValue === 'week') {
+                            const weekStart = new Date(today);
+                            weekStart.setDate(today.getDate() - today.getDay());
+                            const weekEnd = new Date(weekStart);
+                            weekEnd.setDate(weekStart.getDate() + 6);
+                            matchesDate = followupDate >= weekStart && followupDate <= weekEnd;
+                        } else if (dateValue === 'month') {
+                            matchesDate = followupDate.getMonth() === today.getMonth() && 
+                                         followupDate.getFullYear() === today.getFullYear();
+                        }
+                    }
+                    
+                    row.style.display = (matchesSearch && matchesType && matchesDate) ? '' : 'none';
+                });
+            }
+            
+            searchInput.addEventListener('input', filterFollowupsTable);
+            typeFilter.addEventListener('change', filterFollowupsTable);
+            dateFilter.addEventListener('change', filterFollowupsTable);
+        }
+        
+        // Table sorting functionality
+        function setupTableSorting() {
+            const table = document.getElementById('followups-table');
+            if (!table) return;
+            
+            const headers = table.querySelectorAll('th');
+            
+            headers.forEach((header, index) => {
+                if (header.querySelector('i.fas.fa-sort')) {
+                    header.addEventListener('click', () => {
+                        sortTable(table, index);
+                    });
+                }
+            });
+        }
+        
+        function sortTable(table, columnIndex) {
+            const header = table.querySelectorAll('th')[columnIndex];
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // Remove sort classes from all headers
+            table.querySelectorAll('th').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+            });
+            
+            // Determine sort direction
+            const isAscending = !header.classList.contains('sort-asc');
+            header.classList.add(isAscending ? 'sort-asc' : 'sort-desc');
+            
+            // Sort rows
+            rows.sort((a, b) => {
+                let aValue = a.cells[columnIndex].textContent.trim();
+                let bValue = b.cells[columnIndex].textContent.trim();
+                
+                // Special handling for date column
+                if (columnIndex === 2) { // Date column
+                    const dateA = new Date(aValue.split('-').reverse().join('-'));
+                    const dateB = new Date(bValue.split('-').reverse().join('-'));
+                    return isAscending ? dateA - dateB : dateB - dateA;
+                }
+                
+                // Handle numeric values
+                if (!isNaN(parseFloat(aValue)) && !isNaN(parseFloat(bValue))) {
+                    return isAscending 
+                        ? parseFloat(aValue) - parseFloat(bValue)
+                        : parseFloat(bValue) - parseFloat(aValue);
+                }
+                
+                // Handle text values
+                return isAscending
+                    ? aValue.localeCompare(bValue)
+                    : bValue.localeCompare(aValue);
+            });
+            
+            // Reorder rows
+            rows.forEach(row => tbody.appendChild(row));
+        }
+        
+        // Edit follow-up modal
+        function openEditModal(followupId) {
+            // In a real implementation, you would fetch the followup data from the server
+            // For this example, we'll just show the modal with empty values
+            const modal = document.getElementById('edit-followup-modal');
+            document.getElementById('edit-followup-id').value = followupId;
+            
+            // Show the modal
+            modal.style.display = 'block';
+        }
+        
+        function closeEditModal() {
+            const modal = document.getElementById('edit-followup-modal');
+            modal.style.display = 'none';
+        }
+        
+        // Check for updates
+        function checkForUpdates() {
+            const updateStatus = document.getElementById('update-status');
+            const updateBtn = document.getElementById('update-btn');
+            
+            updateStatus.innerHTML = 'Checking for updates...';
+            updateBtn.disabled = true;
+            
+            fetch('/webhook', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'check_updates'
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.details.stdout.includes('Already up to date.')) {
+                        updateStatus.innerHTML = 'Your app is up to date!';
+                    } else {
+                        updateStatus.innerHTML = 'Update successful! Refresh the page to see changes.';
+                    }
+                } else {
+                    updateStatus.innerHTML = 'Update failed: ' + data.message;
+                }
+            })
+            .catch(error => {
+                updateStatus.innerHTML = 'Error: ' + error;
+            })
+            .finally(() => {
+                updateBtn.disabled = false;
+            });
+        }
+        
+        // Initialize everything when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setupFollowupFilters();
+            setupTableSorting();
+            
+            // Set up modal close button
+            const closeBtn = document.querySelector('.close-modal');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', closeEditModal);
+            }
+            
+            // Close modal when clicking outside of it
+            window.addEventListener('click', function(event) {
+                const modal = document.getElementById('edit-followup-modal');
+                if (modal && event.target === modal) {
+                    closeEditModal();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

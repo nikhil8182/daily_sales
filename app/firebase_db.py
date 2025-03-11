@@ -52,9 +52,20 @@ def convert_timestamp(timestamp):
 def to_timestamp(dt):
     if dt is None:
         return None
+    
+    # If it's a string time (like "14:30")
     if isinstance(dt, str):
-        dt = datetime.datetime.strptime(dt, "%H:%M")
-    return firestore.SERVER_TIMESTAMP if dt is None else dt
+        try:
+            # Create a datetime object with today's date and the given time
+            today = datetime.datetime.now().date()
+            time_obj = datetime.datetime.strptime(dt, "%H:%M").time()
+            dt = datetime.datetime.combine(today, time_obj)
+        except ValueError as e:
+            logger.error(f"Invalid time format: {dt}. Error: {e}")
+            return None
+            
+    # At this point dt should be a datetime object        
+    return dt
 
 # Helper function to handle Firestore document serialization
 def document_to_dict(doc):
@@ -146,22 +157,37 @@ def get_todays_pr_visits():
     end_time = datetime.datetime.combine(today, datetime.time.max)
     
     visits = []
-    docs = db.collection(PR_VISITS_COLLECTION).where(
-        'created_at', '>=', start_time
-    ).where(
-        'created_at', '<=', end_time
-    ).stream()
-    
-    for doc in docs:
-        visit = document_to_dict(doc)
-        # Convert timestamps to datetime objects
-        if 'visit_start_time' in visit and visit['visit_start_time']:
-            visit['visit_start_time'] = convert_timestamp(visit['visit_start_time'])
-        if 'created_at' in visit and visit['created_at']:
-            visit['created_at'] = convert_timestamp(visit['created_at'])
-        if 'updated_at' in visit and visit['updated_at']:
-            visit['updated_at'] = convert_timestamp(visit['updated_at'])
-        visits.append(visit)
+    try:
+        # First try to query by created_at timestamp 
+        docs = db.collection(PR_VISITS_COLLECTION).stream()
+        visit_docs = list(docs)
+        
+        logger.info(f"Retrieved {len(visit_docs)} PR visit documents from Firestore")
+        
+        for doc in visit_docs:
+            visit = document_to_dict(doc)
+            if visit:
+                # Convert timestamps to datetime objects
+                if 'visit_start_time' in visit and visit['visit_start_time']:
+                    visit['visit_start_time'] = convert_timestamp(visit['visit_start_time'])
+                if 'created_at' in visit and visit['created_at']:
+                    visit['created_at'] = convert_timestamp(visit['created_at'])
+                if 'updated_at' in visit and visit['updated_at']:
+                    visit['updated_at'] = convert_timestamp(visit['updated_at'])
+                
+                # Add all visits
+                visits.append(visit)
+    except Exception as e:
+        logger.error(f"Error getting PR visits: {str(e)}")
+        # Fallback: get all visits without timestamp processing
+        try:
+            all_docs = db.collection(PR_VISITS_COLLECTION).stream()
+            for doc in all_docs:
+                visit = document_to_dict(doc)
+                if visit:
+                    visits.append(visit)
+        except Exception as inner_e:
+            logger.error(f"Fallback retrieval also failed: {str(inner_e)}")
     
     return visits
 
@@ -198,21 +224,29 @@ def get_todays_tc_activities():
     end_time = datetime.datetime.combine(today, datetime.time.max)
     
     activities = []
-    docs = db.collection(TC_ACTIVITIES_COLLECTION).where(
-        'created_at', '>=', start_time
-    ).where(
-        'created_at', '<=', end_time
-    ).stream()
+    try:
+        # CHANGED: Get all TC activities without date filtering for debugging
+        logger.info("Fetching all TC activities to debug data issues")
+        docs = db.collection(TC_ACTIVITIES_COLLECTION).stream()
+        
+        activity_docs = list(docs)
+        logger.info(f"Retrieved {len(activity_docs)} TC activity documents from Firestore")
+        
+        for doc in activity_docs:
+            activity = document_to_dict(doc)
+            if activity:
+                logger.info(f"Processing TC activity: {activity}")
+                # Convert timestamps to datetime objects
+                if 'created_at' in activity and activity['created_at']:
+                    activity['created_at'] = convert_timestamp(activity['created_at'])
+                if 'updated_at' in activity and activity['updated_at']:
+                    activity['updated_at'] = convert_timestamp(activity['updated_at'])
+                activities.append(activity)
+                logger.info(f"Added TC activity to results: {activity}")
+    except Exception as e:
+        logger.error(f"Error getting TC activities: {str(e)}")
     
-    for doc in docs:
-        activity = document_to_dict(doc)
-        # Convert timestamps to datetime objects
-        if 'created_at' in activity and activity['created_at']:
-            activity['created_at'] = convert_timestamp(activity['created_at'])
-        if 'updated_at' in activity and activity['updated_at']:
-            activity['updated_at'] = convert_timestamp(activity['updated_at'])
-        activities.append(activity)
-    
+    logger.info(f"Returning {len(activities)} TC activities")
     return activities
 
 def add_tc_activity(telecaller_name, manager_incharge, calls_made, visits_booked, visits_confirmed, leads_acquired, bucket_leads):
